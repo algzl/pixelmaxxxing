@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pixelmaxxxing</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <section class="control-panel">
+        <div class="section-title top-title">
+          <div class="title-copy">
+            <h2 id="app-title">Hazırlanıyor...</h2>
+          </div>
+          <div class="title-tools">
+            <div class="title-upload">
+              <label for="image-input">Görsel Seç</label>
+              <input id="image-input" type="file" accept="image/*" />
+            </div>
+          </div>
+        </div>
+
+        <div class="control-grid">
+          <div class="control-card mosaic-card">
+            <div class="card-heading compact-heading">
+              <h3>Mozaik</h3>
+            </div>
+
+            <div class="grid-inputs triple dense-grid">
+              <div class="control-group compact">
+                <label for="mosaic-columns">Sütun</label>
+                <input id="mosaic-columns" type="number" value="48" />
+              </div>
+
+              <div class="control-group compact">
+                <label for="mosaic-rows">Satır</label>
+                <input id="mosaic-rows" type="number" value="48" />
+              </div>
+
+              <div class="control-group compact">
+                <label for="palette-count">Renk kutusu</label>
+                <input id="palette-count" type="number" min="3" max="16" value="8" />
+              </div>
+
+              <div class="control-group compact">
+                <label for="mosaic-tile-width">Parça eni (px)</label>
+                <input id="mosaic-tile-width" type="number" min="2" value="20" />
+              </div>
+
+              <div class="control-group compact">
+                <label for="mosaic-tile-height">Parça boyu (px)</label>
+                <input id="mosaic-tile-height" type="number" min="2" value="20" />
+              </div>
+
+              <div class="control-group compact">
+                <label for="mosaic-shape">Parça şekli</label>
+                <select id="mosaic-shape">
+                  <option value="square">Kare</option>
+                  <option value="round">Yuvarlak</option>
+                </select>
+              </div>
+
+              <div class="control-group compact">
+                <label for="mosaic-gap-x">Sağ-sol aralığı (px)</label>
+                <input id="mosaic-gap-x" type="number" min="0" value="0" />
+              </div>
+
+              <div class="control-group compact">
+                <label for="mosaic-gap-y">Yukarı-aşağı aralığı (px)</label>
+                <input id="mosaic-gap-y" type="number" min="0" value="0" />
+              </div>
+
+              <div class="control-group compact blur-group">
+                <label for="mosaic-blur">Gauss blur</label>
+                <input id="mosaic-blur" type="range" min="0" max="24" value="0" />
+                <p class="hint"><span id="mosaic-blur-value">0</span> px</p>
+              </div>
+            </div>
+
+            <div class="button-row compact duo compact-actions">
+              <button id="reset-mosaic-button" class="secondary-button" type="button">
+                Mozaiği Sıfırla
+              </button>
+            </div>
+          </div>
+
+          <div class="control-card selection-card">
+            <div class="card-heading compact-heading">
+              <h3>Seçim</h3>
+            </div>
+
+            <div class="control-group compact">
+              <label for="threshold">Renk yakınlığı</label>
+              <input id="threshold" type="range" min="0" max="220" value="36" />
+              <p class="hint"><span id="threshold-value">36</span> puan</p>
+            </div>
+
+            <p id="selection-status" class="selection-status">
+              Henüz mozaik seçimi yok. Tek tıkla bir parça seç, Shift ile çoklu seç veya sürükleyerek alan tara.
+            </p>
+
+            <div class="button-row compact selection-actions">
+              <button id="select-similar-button" class="is-hidden" type="button">
+                Benzerlerini Seç
+              </button>
+              <button id="clear-selection-button" class="secondary-button" type="button">
+                Seçimi Temizle
+              </button>
+            </div>
+
+            <button
+              id="analyze-button"
+              class="is-hidden"
+              type="button"
+              tabindex="-1"
+              aria-hidden="true"
+            >
+              Mozaiği Analiz Et
+            </button>
+          </div>
+
+          <div class="control-card palette-card wide-card">
+            <div class="palette-header compact-heading">
+              <div>
+                <label>Bulunan renkler</label>
+                <p id="palette-summary" class="hint">
+                  Önce bir görsel seçip analiz et.
+                </p>
+              </div>
+              <div id="mosaic-summary" class="summary-pill" aria-hidden="true">Mozaik hazır değil</div>
+            </div>
+            <div id="palette-list" class="palette-list"></div>
+            <div class="palette-replace">
+              <label for="replacement-color">Yeni renk</label>
+              <div class="replace-row">
+                <input id="replacement-color" type="color" value="#FF6B35" />
+                <button id="apply-replace-button" type="button">Seçileni Değiştir</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-card action-card">
+            <div class="card-heading compact-heading">
+              <h3>Piksel öteleme</h3>
+            </div>
+
+            <div class="action-layout">
+              <div class="action-block">
+                <div class="grid-inputs secondary-grid duo-grid action-grid">
+                  <div class="control-group compact">
+                    <label for="datamosh-direction">Öteleme yönü</label>
+                    <select id="datamosh-direction">
+                      <option value="right">Sağa</option>
+                      <option value="left">Sola</option>
+                      <option value="down">Aşağı</option>
+                      <option value="up">Yukarı</option>
+                    </select>
+                  </div>
+
+                  <div class="control-group compact">
+                    <label for="datamosh-amount">Adım sayısı</label>
+                    <input id="datamosh-amount" type="number" min="1" value="3" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="double-actions action-bottom">
+              <button id="apply-datamosh-button" type="button">Piksel ötelemeyi uygula</button>
+              <button id="reset-button" class="secondary-button" type="button">
+                Resmi Sıfırla
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="preview-panel">
+        <div class="preview-topbar">
+          <p id="image-size-info" class="hint image-size-info">Görsel yok</p>
+
+          <div class="zoom-controls">
+            <button id="zoom-out-button" class="secondary-button small-button" type="button">-</button>
+            <span id="zoom-value" class="zoom-value">100%</span>
+            <button id="zoom-in-button" class="secondary-button small-button" type="button">+</button>
+            <button id="zoom-reset-button" class="secondary-button small-button" type="button">Sıfırla</button>
+          </div>
+
+          <p id="hover-info" class="hint preview-status">
+            Seçim için mozaiğe tıkla ya da sürükle.
+          </p>
+
+          <div class="preview-toggle-group" aria-label="Seçim önizleme modu">
+            <span class="preview-toggle-label">Seçim önizleme</span>
+            <div class="toggle-buttons">
+              <button
+                id="selection-preview-on-button"
+                class="toggle-button is-active"
+                type="button"
+              >
+                Açık
+              </button>
+              <button
+                id="selection-preview-off-button"
+                class="toggle-button"
+                type="button"
+              >
+                Kapalı
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-frame">
+          <div id="preview-stage" class="preview-stage">
+            <canvas id="preview-canvas"></canvas>
+          </div>
+          <p id="empty-state" class="empty-state">
+            Görsel seçildiğinde burada mozaik ve seçim önizlemesi görünecek.
+          </p>
+        </div>
+
+        <div class="canvas-actions">
+          <div class="canvas-background-controls" aria-label="Canvas arkaplanı">
+            <button
+              id="bg-transparent-button"
+              class="background-swatch is-active"
+              type="button"
+              aria-label="Transparan arkaplan"
+              title="Transparan"
+            >
+              <span class="background-swatch-fill background-transparent"></span>
+            </button>
+            <button
+              id="bg-white-button"
+              class="background-swatch"
+              type="button"
+              aria-label="Beyaz arkaplan"
+              title="Beyaz"
+            >
+              <span class="background-swatch-fill background-white"></span>
+            </button>
+            <button
+              id="bg-black-button"
+              class="background-swatch"
+              type="button"
+              aria-label="Siyah arkaplan"
+              title="Siyah"
+            >
+              <span class="background-swatch-fill background-black"></span>
+            </button>
+            <button
+              id="bg-custom-button"
+              class="background-swatch"
+              type="button"
+              aria-label="Özel arkaplan rengi"
+              title="Özel renk"
+            >
+              <span class="background-swatch-fill background-rainbow"></span>
+            </button>
+            <input id="bg-custom-color" type="color" value="#ff6b35" class="visually-hidden" />
+          </div>
+
+          <button id="export-svg-button" class="overlay-primary-button" type="button">
+            SVG olarak çıktısını al
+          </button>
+          <button id="refresh-preview-button" class="secondary-button overlay-button" type="button">
+            Yenile
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

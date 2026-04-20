@@ -1,0 +1,76 @@
+{
+  "name": "pixelmaxxxing",
+  "version": "1.0.0",
+  "description": "Desktop mosaic editor for tile-based color selection, recoloring, pixel shifting, and SVG export.",
+  "main": "main.js",
+  "author": "pixelmaxxxing",
+  "license": "UNLICENSED",
+  "keywords": [
+    "mosaic",
+    "pixel",
+    "svg",
+    "electron",
+    "image-editor",
+    "color-palette"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis portable"
+  },
+  "build": {
+    "appId": "com.pixelmaxxxing.app",
+    "productName": "pixelmaxxxing",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "style.css",
+      "renderer.js",
+      "main.js",
+      "preload.js",
+      "package.json",
+      "assets/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "pixelmaxxxing",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "artifactName": "pixelmaxxxing-setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "pixelmaxxxing-portable-${version}-${arch}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.8.1",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5"
+  }
+}
