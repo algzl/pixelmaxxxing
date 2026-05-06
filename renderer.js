@@ -1,4 +1,6 @@
-const imageInput = document.getElementById("image-input");
+﻿const imageInput = document.getElementById("image-input");
+const chooseImageButton = document.getElementById("choose-image-button");
+const chosenImageName = document.getElementById("chosen-image-name");
 const mosaicColumnsInput = document.getElementById("mosaic-columns");
 const mosaicRowsInput = document.getElementById("mosaic-rows");
 const mosaicTileWidthInput = document.getElementById("mosaic-tile-width");
@@ -13,9 +15,12 @@ const thresholdInput = document.getElementById("threshold");
 const thresholdValue = document.getElementById("threshold-value");
 const selectionStatus = document.getElementById("selection-status");
 const selectSimilarButton = document.getElementById("select-similar-button");
+const invertSelectionButton = document.getElementById("invert-selection-button");
 const clearSelectionButton = document.getElementById("clear-selection-button");
 const analyzeButton = document.getElementById("analyze-button");
 const exportSvgButton = document.getElementById("export-svg-button");
+const exportPngButton = document.getElementById("export-png-button");
+const exportJpgButton = document.getElementById("export-jpg-button");
 const datamoshDirectionInput = document.getElementById("datamosh-direction");
 const datamoshAmountInput = document.getElementById("datamosh-amount");
 const applyDatamoshButton = document.getElementById("apply-datamosh-button");
@@ -23,7 +28,35 @@ const paletteList = document.getElementById("palette-list");
 const paletteSummary = document.getElementById("palette-summary");
 const mosaicSummary = document.getElementById("mosaic-summary");
 const replacementColorInput = document.getElementById("replacement-color");
-const applyReplaceButton = document.getElementById("apply-replace-button");
+const tileFillTextInput = document.getElementById("tile-fill-text");
+const tileFillFontFamilyInput = document.getElementById("tile-fill-font-family");
+const tileFillEmojiInput = document.getElementById("tile-fill-emoji");
+const tileFillColorInput = document.getElementById("tile-fill-color");
+const tileFillRemoveBgInput = document.getElementById("tile-fill-remove-bg");
+const addTileFillFontButton = document.getElementById("add-tile-fill-font-button");
+const tileFillCustomFontInput = document.getElementById("tile-fill-custom-font-input");
+const applyTileTextFillButton = document.getElementById("apply-tile-text-fill-button");
+const applyTileEmojiFillButton = document.getElementById("apply-tile-emoji-fill-button");
+const applyReplaceButton = document.createElement("button");
+const confirmReplaceButton = document.getElementById("confirm-replace-button");
+const textContentInput = document.getElementById("text-content");
+const textLayerList = document.getElementById("text-layer-list");
+const textFontFamilyInput = document.getElementById("text-font-family");
+const textSizeInput = document.getElementById("text-size");
+const textColorInput = document.getElementById("text-color");
+const textFontWeightInput = document.getElementById("text-font-weight");
+const textFontStyleInput = document.getElementById("text-font-style");
+const addCustomFontButton = document.getElementById("add-custom-font-button");
+const customFontInput = document.getElementById("custom-font-input");
+const emojiPickerInput = document.getElementById("emoji-picker");
+const addTextButton = document.getElementById("add-text-button");
+const addEmojiButton = document.getElementById("add-emoji-button");
+const insertEmojiIntoTextButton = document.getElementById("insert-emoji-into-text-button");
+const processTextButton = document.getElementById("process-text-button");
+const applyTextProcessButton = document.getElementById("apply-text-process-button");
+const removeTextButton = document.getElementById("remove-text-button");
+const deleteTextButton = document.getElementById("delete-text-button");
+const textStatus = document.getElementById("text-status");
 const resetButton = document.getElementById("reset-button");
 const resetMosaicButton = document.getElementById("reset-mosaic-button");
 const zoomOutButton = document.getElementById("zoom-out-button");
@@ -38,6 +71,12 @@ const bgWhiteButton = document.getElementById("bg-white-button");
 const bgBlackButton = document.getElementById("bg-black-button");
 const bgCustomButton = document.getElementById("bg-custom-button");
 const bgCustomColorInput = document.getElementById("bg-custom-color");
+const modeSelectButton = document.getElementById("mode-select-button");
+const modeMoveButton = document.getElementById("mode-move-button");
+const frameNoneButton = document.getElementById("frame-none-button");
+const frameSquareButton = document.getElementById("frame-square-button");
+const frameLandscapeButton = document.getElementById("frame-landscape-button");
+const framePortraitButton = document.getElementById("frame-portrait-button");
 const canvasFrame = document.querySelector(".canvas-frame");
 const previewStage = document.getElementById("preview-stage");
 const previewCanvas = document.getElementById("preview-canvas");
@@ -47,8 +86,8 @@ const imageSizeInfo = document.getElementById("image-size-info");
 const appTitle = document.getElementById("app-title");
 
 const previewContext = previewCanvas.getContext("2d");
-const DEFAULT_MOSAIC_COLUMNS = 48;
-const DEFAULT_MOSAIC_ROWS = 48;
+const DEFAULT_MOSAIC_COLUMNS = 175;
+const DEFAULT_MOSAIC_ROWS = 175;
 const DEFAULT_PALETTE_COUNT = 8;
 const DEFAULT_TILE_SIZE = 20;
 const DEFAULT_GAP_X = 0;
@@ -61,6 +100,10 @@ const MAX_ZOOM = 8;
 const ZOOM_STEP = 1.2;
 const DRAG_THRESHOLD = 8;
 const MAX_SELECTION_HISTORY = 80;
+const MAX_APP_HISTORY = 20;
+const DEFAULT_TEXT_SIZE = 72;
+const EMOJI_FONT_STACK = "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif";
+const DEFAULT_FRAME_PRESET = "none";
 
 const state = {
   image: null,
@@ -79,7 +122,18 @@ const state = {
   selectionMode: "none",
   selectionVersion: 0,
   selectionUndoStack: [],
+  appUndoStack: [],
   dragSelection: null,
+  dragImage: null,
+  textOverlays: [],
+  processedTextOverlays: [],
+  activeTextId: null,
+  activeProcessedTextId: null,
+  activeProcessedTextSource: null,
+  hoveredTextId: null,
+  dragText: null,
+  textProcessSession: null,
+  customFonts: [],
   mosaicShape: "square",
   mosaicInputMode: "count",
   mosaicGapX: 0,
@@ -88,6 +142,12 @@ const state = {
   showSelectionPreview: false,
   previewBackgroundMode: "transparent",
   previewBackgroundColor: "#ff6b35",
+  interactionMode: "select",
+  framePreset: DEFAULT_FRAME_PRESET,
+  frameWidth: 1,
+  frameHeight: 1,
+  imageOffsetX: 0,
+  imageOffsetY: 0,
   zoom: DEFAULT_ZOOM,
   fitZoom: DEFAULT_ZOOM,
   analyzeTimer: null,
@@ -110,7 +170,10 @@ const state = {
   }
 };
 
-appTitle.textContent = window.desktopApp.appName;
+appTitle.textContent = window.desktopApp?.appName || "pixelmaxxxing";
+if (modeMoveButton) {
+  modeMoveButton.textContent = "Transform";
+}
 thresholdValue.textContent = thresholdInput.value;
 mosaicBlurValue.textContent = mosaicBlurInput.value;
 state.mosaicShape = mosaicShapeInput.value;
@@ -120,8 +183,11 @@ state.mosaicBlur = Number(mosaicBlurInput.value);
 zoomValue.textContent = formatZoom(DEFAULT_ZOOM);
 updateSelectionPreviewToggleUI();
 updateSelectionUi();
-imageSizeInfo.textContent = "Görsel yok";
+imageSizeInfo.textContent = "No image loaded";
 applyPreviewBackground();
+updateTextUi();
+updateInteractionModeUi();
+updateFramePresetUi();
 
 thresholdInput.addEventListener("input", () => {
   thresholdValue.textContent = thresholdInput.value;
@@ -180,6 +246,10 @@ imageInput.addEventListener("change", async (event) => {
     return;
   }
 
+  if (chosenImageName) {
+    chosenImageName.textContent = file.name;
+  }
+
   if (state.objectUrl) {
     URL.revokeObjectURL(state.objectUrl);
   }
@@ -191,6 +261,15 @@ imageInput.addEventListener("change", async (event) => {
   state.palette = [];
   state.mosaicTiles = [];
   state.mosaicSettings = null;
+  state.textProcessSession = null;
+  state.textOverlays = [];
+  state.processedTextOverlays = [];
+  state.activeTextId = null;
+  state.activeProcessedTextId = null;
+  state.hoveredTextId = null;
+  state.dragText = null;
+  state.appUndoStack = [];
+  updateTextUi();
   state.activeColorIndex = -1;
   state.hoveredTileIndex = -1;
   state.mosaicShape = mosaicShapeInput.value;
@@ -199,20 +278,26 @@ imageInput.addEventListener("change", async (event) => {
   state.mosaicBlur = clampNumber(Number(mosaicBlurInput.value), 0);
   clearExplicitSelection({ skipRender: true, keepPreviewState: false });
   state.showSelectionPreview = false;
+  state.zoom = DEFAULT_ZOOM;
+  state.fitZoom = DEFAULT_ZOOM;
   updateSelectionPreviewToggleUI();
   paletteList.innerHTML = "";
   imageSizeInfo.textContent = `${state.image.width} x ${state.image.height} px`;
-  paletteSummary.textContent = "Analiz için butona bas.";
-  mosaicSummary.textContent = "Mozaik hazır değil";
-  hoverInfo.textContent = "Bir renk seçtiğinde, threshold içindeki mozaikleri istersen önizlemede vurgulayabilirsin.";
+  paletteSummary.textContent = "Image loaded. Palette is ready.";
+  mosaicSummary.textContent = "Mosaic ready";
+  hoverInfo.textContent = "Choose a color to preview matching mosaic tiles.";
   prepareCanvas();
   drawLoadedImage();
-  updateSelectionUi();
+  analyzeImage();
+});
+
+chooseImageButton?.addEventListener("click", () => {
+  imageInput.click();
 });
 
 analyzeButton.addEventListener("click", () => {
   if (!state.workingImageData) {
-    paletteSummary.textContent = "Önce bir görsel seçmen gerekiyor.";
+    paletteSummary.textContent = "Choose an image first.";
     return;
   }
 
@@ -221,28 +306,49 @@ analyzeButton.addEventListener("click", () => {
 
 exportSvgButton.addEventListener("click", () => {
   if (!state.mosaicTiles.length) {
-    paletteSummary.textContent = "SVG export için önce mozaik oluşturman gerekiyor.";
+    paletteSummary.textContent = "Create mosaic tiles before exporting SVG.";
     return;
   }
 
   exportSvg();
 });
 
-applyReplaceButton.addEventListener("click", () => {
+exportPngButton.addEventListener("click", () => {
   if (!state.mosaicTiles.length) {
-    paletteSummary.textContent = "Değiştirme için önce bir görsel analiz et.";
+    paletteSummary.textContent = "Create mosaic tiles before exporting PNG.";
     return;
   }
 
+  exportRaster("png");
+});
+
+exportJpgButton.addEventListener("click", () => {
+  if (!state.mosaicTiles.length) {
+    paletteSummary.textContent = "Create mosaic tiles before exporting JPG.";
+    return;
+  }
+
+  exportRaster("jpg");
+});
+
+applyReplaceButton.addEventListener("click", () => {
+  if (!state.mosaicTiles.length) {
+    paletteSummary.textContent = "Analyze the image before replacing colors.";
+    return;
+  }
+
+  state.showSelectionPreview = false;
+  updateSelectionPreviewToggleUI();
   applyReplacement();
 });
 
 applyDatamoshButton.addEventListener("click", () => {
   if (!state.mosaicTiles.length) {
-    paletteSummary.textContent = "Datamosh için önce bir görsel analiz et.";
+    paletteSummary.textContent = "Analyze the image before using pixel shift.";
     return;
   }
 
+  pushAppHistory();
   applyDatamosh();
 });
 
@@ -262,13 +368,46 @@ selectSimilarButton.addEventListener("click", () => {
   enableSelectionPreviewFromSelectionAction();
   selectSimilarTilesByReference(referenceColor);
   paletteSummary.textContent =
-    `${rgbToHex(referenceColor.r, referenceColor.g, referenceColor.b)} tonuna yakın mozaikler seçildi.`;
+    `${rgbToHex(referenceColor.r, referenceColor.g, referenceColor.b)} selected as the reference. Similar tiles were added.`;
 });
 
 clearSelectionButton.addEventListener("click", () => {
   pushSelectionHistory();
   clearExplicitSelection();
-  paletteSummary.textContent = "Mozaik seçimi temizlendi.";
+  paletteSummary.textContent = "Mosaic selection cleared.";
+});
+
+invertSelectionButton.addEventListener("click", () => {
+  if (!state.mosaicTiles.length) {
+    return;
+  }
+
+  invertCurrentSelection();
+});
+
+applyReplaceButton.addEventListener(
+  "click",
+  (event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if (typeof replacementColorInput.showPicker === "function") {
+      replacementColorInput.showPicker();
+    } else {
+      replacementColorInput.click();
+    }
+  },
+  true
+);
+
+confirmReplaceButton.addEventListener("click", () => {
+  if (!state.mosaicTiles.length) {
+    paletteSummary.textContent = "Analyze the image before replacing colors.";
+    return;
+  }
+
+  pushAppHistory();
+  applyReplacement();
 });
 
 resetButton.addEventListener("click", () => {
@@ -276,6 +415,7 @@ resetButton.addEventListener("click", () => {
     return;
   }
 
+  pushAppHistory();
   state.workingImageData = cloneImageData(state.originalImageData);
   state.hoveredTileIndex = -1;
   clearExplicitSelection({ skipRender: true });
@@ -303,7 +443,7 @@ resetMosaicButton.addEventListener("click", () => {
   clearExplicitSelection({ skipRender: true, keepPreviewState: true });
 
   if (!state.workingImageData) {
-    mosaicSummary.textContent = `${DEFAULT_MOSAIC_COLUMNS} x ${DEFAULT_MOSAIC_ROWS} mozaik`;
+    mosaicSummary.textContent = `${DEFAULT_MOSAIC_COLUMNS} x ${DEFAULT_MOSAIC_ROWS} tiles`;
     updateSelectionUi();
     return;
   }
@@ -320,7 +460,12 @@ zoomOutButton.addEventListener("click", () => {
 });
 
 zoomResetButton.addEventListener("click", () => {
-  fitCanvasToFrame();
+  state.zoom = DEFAULT_ZOOM;
+  if (state.image) {
+    centerImageInFrame();
+  }
+  applyZoom();
+  requestPreviewRender();
 });
 
 selectionPreviewOnButton.addEventListener("click", () => {
@@ -334,7 +479,7 @@ selectionPreviewOffButton.addEventListener("click", () => {
 refreshPreviewButton.addEventListener("click", () => {
   pushSelectionHistory();
   refreshPreviewCanvas({
-    summaryMessage: "Önizleme temizlendi. Seçim konturları gizlendi."
+    summaryMessage: "Preview refreshed. Selection outlines are hidden."
   });
 });
 
@@ -360,6 +505,186 @@ bgCustomColorInput.addEventListener("input", () => {
   setPreviewBackgroundMode("custom");
 });
 
+tileFillRemoveBgInput?.addEventListener("change", () => {
+  syncSelectedTileFillBackgroundRemoval(Boolean(tileFillRemoveBgInput.checked));
+});
+
+modeSelectButton.addEventListener("click", () => {
+  setInteractionMode("select");
+});
+
+modeMoveButton.addEventListener("click", () => {
+  setInteractionMode("move");
+});
+
+frameNoneButton.addEventListener("click", () => {
+  setFramePreset("none");
+});
+
+frameSquareButton.addEventListener("click", () => {
+  setFramePreset("square");
+});
+
+frameLandscapeButton.addEventListener("click", () => {
+  setFramePreset("landscape");
+});
+
+framePortraitButton.addEventListener("click", () => {
+  setFramePreset("portrait");
+});
+
+addTextButton.addEventListener("click", () => {
+  pushAppHistory();
+  addOrUpdateTextOverlay();
+});
+
+addEmojiButton.addEventListener("click", () => {
+  pushAppHistory();
+  addEmojiOverlay();
+});
+
+addCustomFontButton?.addEventListener("click", () => {
+  customFontInput?.click();
+});
+
+addTileFillFontButton?.addEventListener("click", () => {
+  tileFillCustomFontInput?.click();
+});
+
+customFontInput?.addEventListener("change", async () => {
+  const [fontFile] = customFontInput.files || [];
+
+  if (!fontFile) {
+    return;
+  }
+
+  try {
+    const familyName = await registerCustomFont(fontFile);
+    const optionValue = `'${familyName}', sans-serif`;
+
+    ensureCustomFontOption(familyName, optionValue);
+    textFontFamilyInput.value = optionValue;
+    syncActiveTextOverlayFromControls();
+    textStatus.textContent = `${familyName} loaded. You can use it in text right away.`;
+  } catch (error) {
+    console.error(error);
+    textStatus.textContent = "Font could not be loaded. Try another .ttf, .otf, .woff, or .woff2 file.";
+  } finally {
+    customFontInput.value = "";
+  }
+});
+
+tileFillCustomFontInput?.addEventListener("change", async () => {
+  const [fontFile] = tileFillCustomFontInput.files || [];
+
+  if (!fontFile) {
+    return;
+  }
+
+  try {
+    const familyName = await registerCustomFont(fontFile);
+    const optionValue = `'${familyName}', sans-serif`;
+
+    ensureCustomFontOption(familyName, optionValue);
+    if (tileFillFontFamilyInput) {
+      tileFillFontFamilyInput.value = optionValue;
+    }
+    paletteSummary.textContent = `${familyName} loaded for tile fill.`;
+  } catch (error) {
+    console.error(error);
+    paletteSummary.textContent = "Custom fill font could not be loaded.";
+  } finally {
+    tileFillCustomFontInput.value = "";
+  }
+});
+
+insertEmojiIntoTextButton?.addEventListener("click", () => {
+  const emoji = emojiPickerInput.value?.trim();
+
+  if (!emoji) {
+    textStatus.textContent = "Choose an emoji first.";
+    return;
+  }
+
+  textContentInput.value = `${textContentInput.value || ""}${emoji}`;
+  syncActiveTextOverlayFromControls();
+  textStatus.textContent = "Emoji inserted into the text.";
+});
+
+processTextButton?.addEventListener("click", () => {
+  toggleTextProcessing();
+});
+
+applyTextProcessButton?.addEventListener("click", () => {
+  applyProcessedTextToImage();
+});
+
+removeTextButton?.addEventListener("click", () => {
+  toggleTextProcessing();
+});
+
+deleteTextButton?.addEventListener("click", () => {
+  removeActiveTextOverlay();
+});
+
+textContentInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addOrUpdateTextOverlay();
+  }
+});
+
+textContentInput.addEventListener("input", () => {
+  syncActiveTextOverlayFromControls();
+});
+
+textLayerList?.addEventListener("click", (event) => {
+  const layerButton = event.target.closest("[data-text-layer-id]");
+
+  if (!layerButton) {
+    return;
+  }
+
+  const { textLayerId, textLayerSource } = layerButton.dataset;
+
+  if (!textLayerId) {
+    return;
+  }
+
+  if (textLayerSource === "editable") {
+    selectTextLayer(textLayerId);
+    return;
+  }
+
+  state.activeTextId = null;
+  state.activeProcessedTextId = textLayerId;
+  state.activeProcessedTextSource = textLayerSource || "processed";
+  state.hoveredTextId = null;
+  setInteractionMode("move");
+  updateTextUi();
+  requestPreviewRender();
+});
+
+textSizeInput.addEventListener("input", () => {
+  syncActiveTextOverlayFromControls();
+});
+
+textFontWeightInput?.addEventListener("change", () => {
+  syncActiveTextOverlayFromControls();
+});
+
+textFontStyleInput?.addEventListener("change", () => {
+  syncActiveTextOverlayFromControls();
+});
+
+textFontFamilyInput.addEventListener("change", () => {
+  syncActiveTextOverlayFromControls();
+});
+
+textColorInput.addEventListener("input", () => {
+  syncActiveTextOverlayFromControls();
+});
+
 window.addEventListener("keydown", (event) => {
   const isUndoShortcut = (event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "z";
 
@@ -373,23 +698,70 @@ window.addEventListener("keydown", (event) => {
 });
 
 previewCanvas.addEventListener("mousemove", (event) => {
-  if (!state.mosaicTiles.length || state.dragSelection?.active) {
+  if ((!state.mosaicTiles.length && !state.image) || state.dragSelection?.active || state.dragText?.active || state.dragImage?.active) {
     return;
   }
 
   const point = getCanvasPointFromEvent(event);
-  const nextHoveredTileIndex = getTileIndexFromPoint(point.x, point.y);
+  const imagePoint = framePointToImagePoint(point);
+  const hoveredTextId = getTextOverlayIdFromPoint(point.x, point.y);
+
+  if (state.interactionMode === "move") {
+    state.hoveredTileIndex = -1;
+    state.hoveredTextId = hoveredTextId || null;
+    previewCanvas.style.cursor = hoveredTextId ? "move" : "grab";
+    requestPreviewRender();
+    return;
+  }
+
+  if (hoveredTextId) {
+    if (hoveredTextId === state.hoveredTextId) {
+      previewCanvas.style.cursor = "move";
+      return;
+    }
+
+    state.hoveredTextId = hoveredTextId;
+    state.hoveredTileIndex = -1;
+    previewCanvas.style.cursor = "move";
+    requestPreviewRender();
+    return;
+  }
+
+  state.hoveredTextId = null;
+  const nextHoveredTileIndex = getTileIndexFromPoint(imagePoint.x, imagePoint.y);
 
   if (nextHoveredTileIndex === state.hoveredTileIndex) {
+    previewCanvas.style.cursor = "crosshair";
     return;
   }
 
   state.hoveredTileIndex = nextHoveredTileIndex;
+  previewCanvas.style.cursor = state.interactionMode === "move" ? "grab" : "crosshair";
   requestPreviewRender();
 });
 
 previewCanvas.addEventListener("mousedown", (event) => {
-  if (event.button !== 0 || !state.mosaicTiles.length) {
+  if (event.button !== 0 || (!state.mosaicTiles.length && !state.image)) {
+    return;
+  }
+
+  const point = getCanvasPointFromEvent(event);
+  const textId = getTextOverlayIdFromPoint(point.x, point.y);
+
+  if (textId && state.interactionMode !== "move") {
+    selectTextLayer(textId);
+    setInteractionMode("move");
+    beginTextDrag(event, textId, point);
+    return;
+  }
+
+  if (state.interactionMode === "move") {
+    if (textId) {
+      beginTextDrag(event, textId, point);
+      return;
+    }
+
+    beginImageDrag(event, point);
     return;
   }
 
@@ -397,6 +769,16 @@ previewCanvas.addEventListener("mousedown", (event) => {
 });
 
 window.addEventListener("mousemove", (event) => {
+  if (state.dragText?.active) {
+    updateTextDrag(event);
+    return;
+  }
+
+  if (state.dragImage?.active) {
+    updateImageDrag(event);
+    return;
+  }
+
   if (!state.dragSelection?.active) {
     return;
   }
@@ -405,6 +787,16 @@ window.addEventListener("mousemove", (event) => {
 });
 
 window.addEventListener("mouseup", (event) => {
+  if (state.dragText?.active) {
+    endTextDrag(event);
+    return;
+  }
+
+  if (state.dragImage?.active) {
+    endImageDrag(event);
+    return;
+  }
+
   if (!state.dragSelection?.active) {
     return;
   }
@@ -424,11 +816,19 @@ window.addEventListener("resize", () => {
 });
 
 previewCanvas.addEventListener("mouseleave", () => {
-  if (state.dragSelection?.active || state.hoveredTileIndex === -1) {
+  if (state.dragSelection?.active || state.dragText?.active || state.dragImage?.active) {
+    return;
+  }
+
+  state.hoveredTextId = null;
+
+  if (state.hoveredTileIndex === -1) {
+    previewCanvas.style.cursor = state.interactionMode === "move" ? "grab" : "crosshair";
     return;
   }
 
   state.hoveredTileIndex = -1;
+  previewCanvas.style.cursor = state.interactionMode === "move" ? "grab" : "crosshair";
   requestPreviewRender();
 });
 
@@ -511,7 +911,76 @@ function createSelectionSnapshot() {
   };
 }
 
+function cloneMosaicTiles(tiles) {
+  return tiles.map((tile) => ({
+    ...tile,
+    color: tile.color ? { ...tile.color } : tile.color,
+    fillContent: tile.fillContent || "",
+    fillType: tile.fillType || null,
+    fillColor: tile.fillColor || null,
+    fillFontFamily: tile.fillFontFamily || "'Space Mono', monospace",
+    fillRemoveBackground: Boolean(tile.fillRemoveBackground)
+  }));
+}
+
+function createAppSnapshot(options = {}) {
+  const { full = true } = options;
+  const snapshot = {
+    snapshotKind: full ? "full" : "light",
+    textOverlays: cloneTextOverlayArray(state.textOverlays),
+    processedTextOverlays: cloneTextOverlayArray(state.processedTextOverlays),
+    activeTextId: state.activeTextId,
+    activeProcessedTextId: state.activeProcessedTextId,
+    activeProcessedTextSource: state.activeProcessedTextSource,
+    hoveredTextId: state.hoveredTextId,
+    selectedTileIndices: Array.from(state.selectedTileIndices),
+    selectionReferenceColor: state.selectionReferenceColor ? { ...state.selectionReferenceColor } : null,
+    selectionMode: state.selectionMode,
+    showSelectionPreview: state.showSelectionPreview,
+    activeColorIndex: state.activeColorIndex,
+    imageOffsetX: state.imageOffsetX,
+    imageOffsetY: state.imageOffsetY,
+    zoom: state.zoom,
+    interactionMode: state.interactionMode
+  };
+
+  if (state.textProcessSession) {
+    snapshot.textProcessSession = {
+      textOverlays: cloneTextOverlayArray(state.textProcessSession.textOverlays),
+      activeTextId: state.textProcessSession.activeTextId,
+      hoveredTextId: state.textProcessSession.hoveredTextId,
+      customPalette: clonePaletteArray(state.textProcessSession.customPalette)
+    };
+
+    if (full) {
+      snapshot.textProcessSession.workingImageData = cloneImageData(state.textProcessSession.workingImageData);
+    }
+  } else {
+    snapshot.textProcessSession = null;
+  }
+
+  if (full) {
+    snapshot.workingImageData = state.workingImageData ? cloneImageData(state.workingImageData) : null;
+    snapshot.mosaicTiles = cloneMosaicTiles(state.mosaicTiles);
+    snapshot.autoPalette = clonePaletteArray(state.autoPalette);
+    snapshot.customPalette = clonePaletteArray(state.customPalette);
+    snapshot.palette = clonePaletteArray(state.palette);
+  }
+
+  return snapshot;
+}
+
+function pushAppHistory(options = {}) {
+  const snapshot = createAppSnapshot(options);
+  state.appUndoStack.push(snapshot);
+
+  if (state.appUndoStack.length > MAX_APP_HISTORY) {
+    state.appUndoStack.shift();
+  }
+}
+
 function pushSelectionHistory() {
+  pushAppHistory({ full: false });
   const snapshot = createSelectionSnapshot();
   const previous = state.selectionUndoStack[state.selectionUndoStack.length - 1];
 
@@ -553,15 +1022,60 @@ function restoreSelectionSnapshot(snapshot) {
   }
 }
 
-function undoSelectionChange() {
-  if (!state.selectionUndoStack.length) {
+function restoreAppSnapshot(snapshot) {
+  if (!snapshot) {
     return false;
   }
 
-  const snapshot = state.selectionUndoStack.pop();
-  restoreSelectionSnapshot(snapshot);
-  paletteSummary.textContent = "Seçim geri alındı.";
+  state.workingImageData = snapshot.workingImageData ? cloneImageData(snapshot.workingImageData) : null;
+  state.mosaicTiles = cloneMosaicTiles(snapshot.mosaicTiles || []);
+  state.autoPalette = clonePaletteArray(snapshot.autoPalette || []);
+  state.customPalette = clonePaletteArray(snapshot.customPalette || []);
+  state.palette = clonePaletteArray(snapshot.palette || []);
+  state.textOverlays = cloneTextOverlayArray(snapshot.textOverlays || []);
+  state.processedTextOverlays = cloneTextOverlayArray(snapshot.processedTextOverlays || []);
+  state.textProcessSession = snapshot.textProcessSession
+    ? {
+        workingImageData: cloneImageData(snapshot.textProcessSession.workingImageData),
+        textOverlays: cloneTextOverlayArray(snapshot.textProcessSession.textOverlays),
+        activeTextId: snapshot.textProcessSession.activeTextId,
+        hoveredTextId: snapshot.textProcessSession.hoveredTextId,
+        customPalette: clonePaletteArray(snapshot.textProcessSession.customPalette || [])
+      }
+    : null;
+  state.activeTextId = snapshot.activeTextId ?? null;
+  state.activeProcessedTextId = snapshot.activeProcessedTextId ?? null;
+  state.hoveredTextId = snapshot.hoveredTextId ?? null;
+  state.selectedTileIndices = new Set(snapshot.selectedTileIndices || []);
+  state.selectionReferenceColor = snapshot.selectionReferenceColor ? { ...snapshot.selectionReferenceColor } : null;
+  state.selectionMode = snapshot.selectionMode || "none";
+  state.showSelectionPreview = Boolean(snapshot.showSelectionPreview);
+  state.activeColorIndex = Number.isInteger(snapshot.activeColorIndex) ? snapshot.activeColorIndex : -1;
+  state.imageOffsetX = snapshot.imageOffsetX ?? state.imageOffsetX;
+  state.imageOffsetY = snapshot.imageOffsetY ?? state.imageOffsetY;
+  state.zoom = snapshot.zoom ?? state.zoom;
+  state.interactionMode = snapshot.interactionMode || "select";
+  state.dragText = null;
+  state.dragImage = null;
+  state.dragSelection = null;
+  updateSelectionPreviewToggleUI();
+  updateInteractionModeUi();
+  updateTextUi();
+  renderPalette();
+  invalidateSelectionCaches();
+  invalidateRenderCache();
+  requestPreviewRender();
+  paletteSummary.textContent = "Undo applied.";
   return true;
+}
+
+function undoSelectionChange() {
+  if (!state.appUndoStack.length) {
+    return false;
+  }
+
+  const snapshot = state.appUndoStack.pop();
+  return restoreAppSnapshot(snapshot);
 }
 
 function bumpSelectionVersion() {
@@ -578,13 +1092,139 @@ function loadImage(src) {
   });
 }
 
+function resolveFrameDimensions() {
+  if (!state.image) {
+    return { width: 1, height: 1 };
+  }
+
+  const imageWidth = state.image.width;
+  const imageHeight = state.image.height;
+
+  if (state.framePreset === "none") {
+    return {
+      width: imageWidth,
+      height: imageHeight
+    };
+  }
+
+  if (state.framePreset === "landscape") {
+    const width = Math.max(imageWidth, Math.round(imageHeight * (16 / 9)));
+    return {
+      width,
+      height: Math.max(1, Math.round(width * (9 / 16)))
+    };
+  }
+
+  if (state.framePreset === "portrait") {
+    const height = Math.max(imageHeight, Math.round(imageWidth * (16 / 9)));
+    return {
+      width: Math.max(1, Math.round(height * (9 / 16))),
+      height
+    };
+  }
+
+  const side = Math.max(imageWidth, imageHeight);
+  return {
+    width: side,
+    height: side
+  };
+}
+
+function hasActiveFramePreset() {
+  return state.framePreset !== "none";
+}
+
+function getRenderedImageWidth() {
+  return state.image ? state.image.width * state.zoom : 0;
+}
+
+function getRenderedImageHeight() {
+  return state.image ? state.image.height * state.zoom : 0;
+}
+
+function getSnappedRenderRect() {
+  return {
+    x: Math.round(state.imageOffsetX),
+    y: Math.round(state.imageOffsetY),
+    width: Math.round(getRenderedImageWidth()),
+    height: Math.round(getRenderedImageHeight())
+  };
+}
+
+function centerImageInFrame() {
+  if (!state.image) {
+    return;
+  }
+
+  if (!hasActiveFramePreset()) {
+    state.imageOffsetX = 0;
+    state.imageOffsetY = 0;
+    return;
+  }
+
+  state.imageOffsetX = Math.round((state.frameWidth - getRenderedImageWidth()) / 2);
+  state.imageOffsetY = Math.round((state.frameHeight - getRenderedImageHeight()) / 2);
+  constrainImageOffsets();
+}
+
+function getImageBoundsInFrame() {
+  return {
+    x: state.imageOffsetX,
+    y: state.imageOffsetY,
+    width: getRenderedImageWidth(),
+    height: getRenderedImageHeight()
+  };
+}
+
+function constrainImageOffsets() {
+  if (!state.image) {
+    return;
+  }
+
+  if (!hasActiveFramePreset()) {
+    state.imageOffsetX = 0;
+    state.imageOffsetY = 0;
+    return;
+  }
+
+  const renderedWidth = getRenderedImageWidth();
+  const renderedHeight = getRenderedImageHeight();
+  const minX = Math.min(0, state.frameWidth - renderedWidth);
+  const maxX = Math.max(0, state.frameWidth - renderedWidth);
+  const minY = Math.min(0, state.frameHeight - renderedHeight);
+  const maxY = Math.max(0, state.frameHeight - renderedHeight);
+
+  state.imageOffsetX = clampNumber(state.imageOffsetX, minX, maxX);
+  state.imageOffsetY = clampNumber(state.imageOffsetY, minY, maxY);
+}
+
+function framePointToImagePoint(point) {
+  return {
+    x: (point.x - state.imageOffsetX) / state.zoom,
+    y: (point.y - state.imageOffsetY) / state.zoom
+  };
+}
+
+function imageRectToFrameRect(rect) {
+  return {
+    x: rect.x * state.zoom + state.imageOffsetX,
+    y: rect.y * state.zoom + state.imageOffsetY,
+    width: rect.width * state.zoom,
+    height: rect.height * state.zoom
+  };
+}
+
 function prepareCanvas() {
-  previewCanvas.width = state.image.width;
-  previewCanvas.height = state.image.height;
+  const frame = resolveFrameDimensions();
+  state.frameWidth = frame.width;
+  state.frameHeight = frame.height;
+  previewCanvas.width = frame.width;
+  previewCanvas.height = frame.height;
   previewCanvas.style.display = "block";
   emptyState.style.display = "none";
   state.renderCache.canvas.width = state.image.width;
   state.renderCache.canvas.height = state.image.height;
+  centerImageInFrame();
   invalidateRenderCache();
   window.requestAnimationFrame(() => {
     fitCanvasToFrame();
@@ -592,11 +1232,14 @@ function prepareCanvas() {
 }
 
 function drawLoadedImage() {
-  previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-  previewContext.drawImage(state.image, 0, 0);
-  state.originalImageData = previewContext.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+  const rasterCanvas = document.createElement("canvas");
+  rasterCanvas.width = state.image.width;
+  rasterCanvas.height = state.image.height;
+  const rasterContext = rasterCanvas.getContext("2d");
+  rasterContext.clearRect(0, 0, rasterCanvas.width, rasterCanvas.height);
+  rasterContext.drawImage(state.image, 0, 0);
+  state.originalImageData = rasterContext.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height);
   state.workingImageData = cloneImageData(state.originalImageData);
-  previewContext.putImageData(state.workingImageData, 0, 0);
   invalidateRenderCache();
   window.requestAnimationFrame(() => {
     fitCanvasToFrame();
@@ -626,11 +1269,11 @@ function analyzeImage() {
   }
 
   mosaicSummary.textContent =
-    `${settings.columns} x ${settings.rows} mozaik | ${settings.tileWidth} x ${settings.tileHeight}px | ` +
-    `${state.mosaicShape === "round" ? "yuvarlak" : "kare"} | yatay boşluk ${state.mosaicGapX}px | dikey boşluk ${state.mosaicGapY}px | blur ${state.mosaicBlur}px`;
+    `${settings.columns} x ${settings.rows} tiles | ${settings.tileWidth} x ${settings.tileHeight}px | ` +
+    `${state.mosaicShape === "round" ? "round" : "square"} | horizontal gap ${state.mosaicGapX}px | vertical gap ${state.mosaicGapY}px | blur ${state.mosaicBlur}px`;
   if (false) {
     renderPalette();
-    paletteSummary.textContent = "Shift ile alanın benzerleri seçime eklendi.";
+    paletteSummary.textContent = "Shift added similar area tiles to the selection.";
     return;
   }
 
@@ -641,8 +1284,31 @@ function analyzeImage() {
 }
 
 function setZoom(nextZoom) {
-  state.zoom = clampNumber(nextZoom, MIN_ZOOM, MAX_ZOOM);
+  if (!state.image) {
+    state.zoom = clampNumber(nextZoom, MIN_ZOOM, MAX_ZOOM);
+    applyZoom();
+    requestPreviewRender();
+    return;
+  }
+
+  const previousZoom = state.zoom;
+  const nextClampedZoom = clampNumber(nextZoom, MIN_ZOOM, MAX_ZOOM);
+
+  if (Math.abs(previousZoom - nextClampedZoom) < 0.0001) {
+    return;
+  }
+
+  const anchorX = state.frameWidth / 2;
+  const anchorY = state.frameHeight / 2;
+  const imageXAtAnchor = (anchorX - state.imageOffsetX) / previousZoom;
+  const imageYAtAnchor = (anchorY - state.imageOffsetY) / previousZoom;
+
+  state.zoom = nextClampedZoom;
+  state.imageOffsetX = anchorX - imageXAtAnchor * nextClampedZoom;
+  state.imageOffsetY = anchorY - imageYAtAnchor * nextClampedZoom;
+  constrainImageOffsets();
   applyZoom();
+  requestPreviewRender();
 }
 
 function setSelectionPreviewVisibility(visible) {
@@ -660,11 +1326,51 @@ function setSelectionPreviewVisibility(visible) {
 function setPreviewBackgroundMode(mode) {
   state.previewBackgroundMode = mode;
   applyPreviewBackground();
+  requestPreviewRender();
+}
+
+function setInteractionMode(mode) {
+  state.interactionMode = mode;
+  state.hoveredTileIndex = -1;
+  state.hoveredTextId = null;
+  if (mode === "move") {
+    setSelectionPreviewVisibility(false);
+  }
+  updateInteractionModeUi();
+  updateHoverInfo();
+  hoverInfo.textContent =
+    mode === "move"
+      ? "Transform mode is active. Drag the image, text, or emoji inside the frame."
+      : hoverInfo.textContent;
+  requestPreviewRender();
+}
+
+function updateInteractionModeUi() {
+  modeSelectButton.classList.toggle("is-active", state.interactionMode === "select");
+  modeMoveButton.classList.toggle("is-active", state.interactionMode === "move");
+  previewCanvas.style.cursor = state.interactionMode === "move" ? "grab" : "crosshair";
+}
+
+function setFramePreset(preset) {
+  state.framePreset = preset;
+  updateFramePresetUi();
+
+  if (!state.image) {
+    return;
+  }
+
+  prepareCanvas();
+  requestPreviewRender();
+}
+
+function updateFramePresetUi() {
+  frameNoneButton.classList.toggle("is-active", state.framePreset === "none");
+  frameSquareButton.classList.toggle("is-active", state.framePreset === "square");
+  frameLandscapeButton.classList.toggle("is-active", state.framePreset === "landscape");
+  framePortraitButton.classList.toggle("is-active", state.framePreset === "portrait");
 }
 
 function applyPreviewBackground() {
-  canvasFrame.dataset.bgMode = state.previewBackgroundMode;
-  canvasFrame.style.setProperty("--custom-preview-bg", state.previewBackgroundColor);
   previewStage.dataset.bgMode = state.previewBackgroundMode;
   previewStage.style.setProperty("--custom-preview-bg", state.previewBackgroundColor);
 
@@ -681,10 +1387,12 @@ function enableSelectionPreviewFromSelectionAction() {
 }
 
 function applyZoom() {
-  previewCanvas.style.width = `${previewCanvas.width * state.zoom}px`;
-  previewCanvas.style.height = `${previewCanvas.height * state.zoom}px`;
-  previewStage.style.width = `${previewCanvas.width * state.zoom}px`;
-  previewStage.style.height = `${previewCanvas.height * state.zoom}px`;
+  const width = previewCanvas.width * state.fitZoom;
+  const height = previewCanvas.height * state.fitZoom;
+  previewCanvas.style.width = `${width}px`;
+  previewCanvas.style.height = `${height}px`;
+  previewStage.style.width = `${width}px`;
+  previewStage.style.height = `${height}px`;
   zoomValue.textContent = formatZoom(state.zoom);
 }
 
@@ -701,16 +1409,488 @@ function getFitZoom() {
 }
 
 function fitCanvasToFrame({ preserveManualZoom = false } = {}) {
-  const previousFitZoom = state.fitZoom;
   const nextFitZoom = getFitZoom();
-
   state.fitZoom = nextFitZoom;
+  applyZoom();
+}
 
-  if (!preserveManualZoom || Math.abs(state.zoom - previousFitZoom) < 0.02) {
-    state.zoom = nextFitZoom;
+function updateTextUi() {
+  const activeText = getActiveTextOverlay();
+
+  removeTextButton.disabled = !activeText;
+  processTextButton.disabled = !state.textOverlays.length && !state.textProcessSession;
+  applyTextProcessButton.disabled = !state.textProcessSession;
+  processTextButton.textContent = state.textProcessSession ? "Remove" : "Process";
+
+  if (!activeText) {
+    textStatus.textContent = "After adding text, you can click and drag it on the canvas.";
+    return;
   }
 
-  applyZoom();
+  textContentInput.value = activeText.text;
+  if (activeText.type !== "emoji") {
+    textFontFamilyInput.value = activeText.fontFamily;
+    textColorInput.value = activeText.color;
+    if (textFontWeightInput) {
+      textFontWeightInput.value = activeText.fontWeight || "400";
+    }
+    if (textFontStyleInput) {
+      textFontStyleInput.value = activeText.fontStyle || "normal";
+    }
+  }
+  textSizeInput.value = String(Math.round(activeText.size));
+  textStatus.textContent =
+    activeText.type === "emoji"
+      ? "Active emoji selected. Drag it on the canvas to reposition it."
+      : "Active text selected. Drag it on the canvas to reposition it.";
+}
+
+function getActiveTextOverlay() {
+  return state.textOverlays.find((overlay) => overlay.id === state.activeTextId) || null;
+}
+
+function getOverlayFontFamily(overlay) {
+  if (!overlay) {
+    return "'Space Mono', monospace";
+  }
+
+  if (overlay.type === "emoji") {
+    return EMOJI_FONT_STACK;
+  }
+
+  return `${overlay.fontFamily}, ${EMOJI_FONT_STACK}`;
+}
+
+function renderTextLayerList() {
+  if (!textLayerList) {
+    return;
+  }
+
+  if (!state.textOverlays.length) {
+    textLayerList.innerHTML = '<p class="text-layer-empty">No text or emoji layers yet.</p>';
+    return;
+  }
+
+  textLayerList.innerHTML = state.textOverlays
+    .slice()
+    .reverse()
+    .map((overlay, reverseIndex) => {
+      const label = overlay.type === "emoji" ? "Emoji Layer" : `Text Layer ${state.textOverlays.length - reverseIndex}`;
+      const preview = escapeHtml(overlay.text || (overlay.type === "emoji" ? "Emoji" : "Text"));
+      const activeClass = overlay.id === state.activeTextId ? " is-active" : "";
+
+      return `
+        <button class="text-layer-item${activeClass}" type="button" data-text-layer-id="${overlay.id}">
+          <span class="text-layer-badge">${label}</span>
+          <span class="text-layer-text">${preview}</span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function selectTextLayer(textId) {
+  const overlay = state.textOverlays.find((item) => item.id === textId);
+
+  if (!overlay) {
+    return;
+  }
+
+  state.activeTextId = textId;
+  state.hoveredTextId = textId;
+  updateTextUi();
+  requestPreviewRender();
+}
+
+function syncActiveTextOverlayFromControls() {
+  const activeText = getActiveTextOverlay();
+
+  if (!activeText) {
+    return;
+  }
+
+  if (activeText.type === "text") {
+    activeText.text = textContentInput.value;
+  }
+
+  activeText.size = clampNumber(Number(textSizeInput.value), 8, 320);
+
+  if (activeText.type !== "emoji") {
+    activeText.fontFamily = textFontFamilyInput.value || "'Space Mono', monospace";
+    activeText.color = textColorInput.value || "#111111";
+    activeText.fontWeight = textFontWeightInput?.value || "400";
+    activeText.fontStyle = textFontStyleInput?.value || "normal";
+  }
+
+  renderTextLayerList();
+  requestPreviewRender();
+}
+
+function sanitizeCustomFontFamilyName(rawName) {
+  return (rawName || "Custom Font")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/[^a-zA-Z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "Custom Font";
+}
+
+function ensureUniqueCustomFontFamilyName(baseName) {
+  const knownValues = new Set([
+    ...Array.from(textFontFamilyInput.options).map((option) => option.textContent?.trim()),
+    ...(tileFillFontFamilyInput
+      ? Array.from(tileFillFontFamilyInput.options).map((option) => option.textContent?.trim())
+      : []),
+    ...state.customFonts.map((font) => font.familyName)
+  ]);
+
+  if (!knownValues.has(baseName)) {
+    return baseName;
+  }
+
+  let suffix = 2;
+
+  while (knownValues.has(`${baseName} ${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseName} ${suffix}`;
+}
+
+function ensureCustomFontOption(familyName, optionValue) {
+  const ensureOnSelect = (select) => {
+    if (!select) {
+      return null;
+    }
+
+    const existingOption = Array.from(select.options).find((option) => option.value === optionValue);
+
+    if (existingOption) {
+      existingOption.textContent = familyName;
+      return existingOption;
+    }
+
+    const option = document.createElement("option");
+    option.value = optionValue;
+    option.textContent = familyName;
+    option.dataset.customFont = "true";
+    select.append(option);
+    return option;
+  };
+
+  ensureOnSelect(textFontFamilyInput);
+  return ensureOnSelect(tileFillFontFamilyInput);
+}
+
+async function registerCustomFont(fontFile) {
+  if (typeof FontFace === "undefined" || !document.fonts) {
+    throw new Error("FontFace API unavailable");
+  }
+
+  const baseName = sanitizeCustomFontFamilyName(fontFile.name);
+  const familyName = ensureUniqueCustomFontFamilyName(baseName);
+  const fontUrl = URL.createObjectURL(fontFile);
+  const fontFace = new FontFace(familyName, `url(${fontUrl})`);
+
+  await fontFace.load();
+  document.fonts.add(fontFace);
+  state.customFonts.push({
+    familyName,
+    url: fontUrl
+  });
+
+  return familyName;
+}
+
+function addOrUpdateTextOverlay() {
+  if (!state.image) {
+    textStatus.textContent = "Choose an image first.";
+    return;
+  }
+
+  const value = textContentInput.value.trim();
+
+  if (!value) {
+    textStatus.textContent = "Type some text first.";
+    return;
+  }
+
+  const fontFamily = textFontFamilyInput.value || "'Space Mono', monospace";
+  const size = clampNumber(Number(textSizeInput.value), 8, 320);
+  const color = textColorInput.value || "#111111";
+  const fontWeight = textFontWeightInput?.value || "400";
+  const fontStyle = textFontStyleInput?.value || "normal";
+  const activeText = getActiveTextOverlay();
+
+  if (activeText) {
+    activeText.text = value;
+    activeText.fontFamily = activeText.type === "emoji" ? EMOJI_FONT_STACK : fontFamily;
+    activeText.size = size;
+    activeText.color = activeText.type === "emoji" ? "#111111" : color;
+    activeText.fontWeight = activeText.type === "emoji" ? "400" : fontWeight;
+    activeText.fontStyle = activeText.type === "emoji" ? "normal" : fontStyle;
+    textStatus.textContent =
+      activeText.type === "emoji" ? "Selected emoji updated." : "Selected text updated.";
+  } else {
+    const overlay = {
+      id: `text-${Date.now()}`,
+      text: value,
+      fontFamily,
+      size,
+      color,
+      fontWeight,
+      fontStyle,
+      type: "text",
+      x: Math.round(previewCanvas.width * 0.5),
+      y: Math.round(previewCanvas.height * 0.5),
+      align: "center"
+    };
+    state.textOverlays.push(overlay);
+    state.activeTextId = overlay.id;
+    textStatus.textContent = "Text added. You can drag it on the canvas now.";
+  }
+
+  updateTextUi();
+  requestPreviewRender();
+}
+
+function addEmojiOverlay() {
+  if (!state.image) {
+    textStatus.textContent = "Choose an image first.";
+    return;
+  }
+
+  const emoji = emojiPickerInput.value?.trim();
+
+  if (!emoji) {
+    textStatus.textContent = "Choose an emoji first.";
+    return;
+  }
+
+  const size = clampNumber(Number(textSizeInput.value), 8, 320);
+  const overlay = {
+    id: `emoji-${Date.now()}`,
+    text: emoji,
+    fontFamily: EMOJI_FONT_STACK,
+    size,
+    color: "#111111",
+    fontWeight: "400",
+    fontStyle: "normal",
+    type: "emoji",
+    x: Math.round(previewCanvas.width * 0.5),
+    y: Math.round(previewCanvas.height * 0.5),
+    align: "center"
+  };
+
+  state.textOverlays.push(overlay);
+  state.activeTextId = overlay.id;
+  state.hoveredTextId = overlay.id;
+  textStatus.textContent = "Emoji added. You can drag it on the canvas now.";
+  updateTextUi();
+  requestPreviewRender();
+}
+
+function removeActiveTextOverlay() {
+  if (!state.activeTextId) {
+    return;
+  }
+
+  state.textOverlays = state.textOverlays.filter((overlay) => overlay.id !== state.activeTextId);
+  state.activeTextId = null;
+  state.hoveredTextId = null;
+  textStatus.textContent = "Selected text deleted.";
+  updateTextUi();
+  requestPreviewRender();
+}
+
+function centerActiveTextOverlay() {
+  const activeText = getActiveTextOverlay();
+
+  if (!activeText) {
+    return;
+  }
+
+  activeText.x = Math.round(previewCanvas.width * 0.5);
+  activeText.y = Math.round(previewCanvas.height * 0.5);
+  activeText.align = "center";
+  textStatus.textContent = "Text centered inside the frame.";
+  requestPreviewRender();
+}
+
+function drawTextOverlays() {
+  drawTextOverlaysToContext(previewContext, 1);
+}
+
+function drawTextOverlaysToContext(context, scale = 1) {
+  if (!state.textOverlays.length) {
+    return;
+  }
+
+  context.save();
+  context.textBaseline = "top";
+
+  state.textOverlays.forEach((overlay) => {
+    const fontWeight = overlay.fontWeight || "400";
+    const fontStyle = overlay.fontStyle || "normal";
+    context.font = `${fontStyle} ${fontWeight} ${Math.round(overlay.size * scale)}px ${overlay.fontFamily}`;
+    context.fillStyle = overlay.color;
+    context.textAlign = overlay.align || "left";
+    context.fillText(overlay.text, overlay.x * scale, overlay.y * scale);
+
+    if (context === previewContext && overlay.id === state.activeTextId) {
+      const bounds = getTextOverlayBounds(overlay);
+      context.save();
+      context.strokeStyle = "rgba(17, 17, 17, 0.55)";
+      context.lineWidth = 1;
+      context.setLineDash([6, 4]);
+      context.strokeRect(bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8);
+      context.restore();
+    }
+  });
+
+  context.restore();
+}
+
+function getTextOverlayBounds(overlay) {
+  previewContext.save();
+  const fontWeight = overlay.fontWeight || "400";
+  const fontStyle = overlay.fontStyle || "normal";
+  previewContext.font = `${fontStyle} ${fontWeight} ${Math.round(overlay.size)}px ${overlay.fontFamily}`;
+  previewContext.textBaseline = "top";
+  const metrics = previewContext.measureText(overlay.text);
+  previewContext.restore();
+
+  const width = Math.max(metrics.width, 1);
+  const height = Math.max(overlay.size * 1.1, 1);
+  const x = overlay.align === "center" ? overlay.x - width / 2 : overlay.x;
+
+  return {
+    x,
+    y: overlay.y,
+    width,
+    height
+  };
+}
+
+function getTextOverlayIdFromPoint(x, y) {
+  for (let index = state.textOverlays.length - 1; index >= 0; index -= 1) {
+    const overlay = state.textOverlays[index];
+    const bounds = getTextOverlayBounds(overlay);
+
+    if (
+      x >= bounds.x &&
+      x <= bounds.x + bounds.width &&
+      y >= bounds.y &&
+      y <= bounds.y + bounds.height
+    ) {
+      return overlay.id;
+    }
+  }
+
+  return null;
+}
+
+function beginTextDrag(event, textId, point) {
+  if (state.interactionMode !== "move") {
+    return;
+  }
+
+  const overlay = state.textOverlays.find((item) => item.id === textId);
+
+  if (!overlay) {
+    return;
+  }
+
+  const bounds = getTextOverlayBounds(overlay);
+  pushAppHistory();
+  state.activeTextId = textId;
+  state.hoveredTextId = textId;
+  state.dragText = {
+    active: true,
+    id: textId,
+    offsetX: point.x - bounds.x,
+    offsetY: point.y - bounds.y
+  };
+  previewCanvas.style.cursor = "move";
+  updateTextUi();
+  requestPreviewRender();
+  event.preventDefault();
+}
+
+function updateTextDrag(event) {
+  const overlay = getActiveTextOverlay();
+
+  if (!overlay || !state.dragText?.active) {
+    return;
+  }
+
+  const point = getCanvasPointFromEvent(event);
+  const bounds = getTextOverlayBounds(overlay);
+  const nextX = point.x - state.dragText.offsetX;
+  const nextY = point.y - state.dragText.offsetY;
+  const halfWidth = bounds.width / 2;
+
+  overlay.x =
+    overlay.align === "center"
+      ? clampNumber(nextX + halfWidth, halfWidth, Math.max(previewCanvas.width - halfWidth, halfWidth))
+      : clampNumber(nextX, 0, Math.max(previewCanvas.width - bounds.width, 0));
+  overlay.y = clampNumber(nextY, 0, Math.max(previewCanvas.height - bounds.height, 0));
+  textStatus.textContent = "Dragging text.";
+  requestPreviewRender();
+}
+
+function endTextDrag(event) {
+  if (!state.dragText?.active) {
+    return;
+  }
+
+  updateTextDrag(event);
+  state.dragText = null;
+  previewCanvas.style.cursor = "crosshair";
+  textStatus.textContent = "Text moved.";
+  requestPreviewRender();
+}
+
+function beginImageDrag(event, point) {
+  if (state.interactionMode !== "move" || !state.image) {
+    return;
+  }
+
+  pushAppHistory();
+  state.dragImage = {
+    active: true,
+    startX: point.x,
+    startY: point.y,
+    startOffsetX: state.imageOffsetX,
+    startOffsetY: state.imageOffsetY
+  };
+  previewCanvas.style.cursor = "grabbing";
+  hoverInfo.textContent = "Dragging image inside the frame.";
+  event.preventDefault();
+}
+
+function updateImageDrag(event) {
+  if (!state.dragImage?.active || !state.image) {
+    return;
+  }
+
+  const point = getCanvasPointFromEvent(event);
+  state.imageOffsetX = state.dragImage.startOffsetX + (point.x - state.dragImage.startX);
+  state.imageOffsetY = state.dragImage.startOffsetY + (point.y - state.dragImage.startY);
+  constrainImageOffsets();
+  requestPreviewRender();
+}
+
+function endImageDrag(event) {
+  if (!state.dragImage?.active) {
+    return;
+  }
+
+  updateImageDrag(event);
+  state.dragImage = null;
+  previewCanvas.style.cursor = "grab";
+  hoverInfo.textContent = "Image moved.";
+  requestPreviewRender();
 }
 
 function resolveMosaicSettings() {
@@ -821,7 +2001,12 @@ function buildMosaicTiles(imageData, settings) {
         row,
         column,
         color,
-        hsl: rgbToHsl(color.r, color.g, color.b)
+        hsl: rgbToHsl(color.r, color.g, color.b),
+        fillContent: "",
+        fillType: null,
+        fillColor: null,
+        fillFontFamily: "'Space Mono', monospace",
+        fillRemoveBackground: false
       });
     }
   }
@@ -987,19 +2172,19 @@ function renderPalette() {
   paletteList.innerHTML = "";
 
   if (!state.palette.length) {
-    paletteSummary.textContent = "Yeterli renk çeşidi bulunamadı.";
+    paletteSummary.textContent = "Not enough color variety was found.";
     return;
   }
 
   paletteSummary.textContent =
-    `${state.palette.length} farklı ve renk çemberine daha dengeli dağılan ton seçildi.`;
+    `${state.palette.length} diverse tones were selected and balanced across the color wheel.`;
 
   state.palette.forEach((color, index) => {
     const item = document.createElement("div");
     item.className = `palette-item${state.activeColorIndex === index ? " active" : ""}`;
     item.tabIndex = 0;
     item.setAttribute("role", "button");
-    item.setAttribute("aria-label", `${color.hex} rengini seç`);
+    item.setAttribute("aria-label", `Select ${color.hex}`);
 
     const swatch = document.createElement("div");
     swatch.className = "swatch";
@@ -1011,11 +2196,11 @@ function renderPalette() {
     const hex = document.createElement("strong");
     hex.textContent = color.hex;
 
-    const count = document.createElement("span");
-    count.textContent =
-      color.source === "custom"
-        ? "Elle seçildi"
-        : `${formatCount(color.count)} mozaik parçası`;
+  const count = document.createElement("span");
+  count.textContent =
+    color.source === "custom"
+      ? "Manually selected"
+      : `${formatCount(color.count)} tiles`;
 
     const activateColor = () => {
       enableSelectionPreviewFromSelectionAction();
@@ -1043,18 +2228,19 @@ function renderPalette() {
 function updateSelectionUi() {
   const selectedCount = state.selectedTileIndices.size;
   clearSelectionButton.disabled = selectedCount === 0;
-  selectSimilarButton.classList.toggle("is-hidden", selectedCount === 0);
-  selectSimilarButton.textContent = state.selectionMode === "similar" ? "Benzerlerini Yenile" : "Benzerlerini Sec";
+  invertSelectionButton.disabled = !state.mosaicTiles.length;
+  selectSimilarButton.classList.remove("is-hidden");
+  selectSimilarButton.textContent = "Select Similar";
 
   if (!state.mosaicTiles.length) {
     selectionStatus.textContent =
-      "Henüz mozaik seçimi yok. Tek tıkla bir parça seç, Shift ile çoklu seç veya sürükleyerek alan tara.";
+      "No tile selection yet. Click one tile, Shift-click to add more, or drag to scan an area.";
     return;
   }
 
   if (!selectedCount) {
     selectionStatus.textContent =
-      "Tek tık tekli seçim yapar. Shift ile mozaikleri ekleyip çıkartabilirsin. Sürükleme, alanın baskın tonuna benzeyen tüm mozaikleri bulur.";
+      "Click once to select one tile. Shift-click adds or removes tiles. Dragging scans tiles similar to the dominant tone in the area.";
     return;
   }
 
@@ -1068,31 +2254,51 @@ function updateSelectionUi() {
 
   if (state.selectionMode === "similar" && referenceHex) {
     selectionStatus.textContent =
-      `${formatCount(selectedCount)} mozaik ${referenceHex} referansıyla seçili. Hassaslık çubuğunu oynattığında seçim buna göre yenilenir.`;
+      `${formatCount(selectedCount)} tiles selected with reference ${referenceHex}. Adjust the similarity slider to refresh the selection.`;
     return;
   }
 
   if (selectedCount === 1 && referenceHex) {
     selectionStatus.textContent =
-      `${referenceHex} seçili. Yakınlık çubuğuyla benzer mozaikleri kapsayabilirsin.`;
+      `${referenceHex} selected. Use the similarity slider to include similar tiles.`;
     return;
   }
 
   selectionStatus.textContent =
-    `${formatCount(selectedCount)} mozaik elle seçili. İstersen şimdi "Benzerlerini Seç" ile bu seçimin baskın tonuna yakın tüm mozaikleri işaretleyebilirsin.`;
+    `${formatCount(selectedCount)} tiles manually selected. Use "Select Similar" to include tiles near this selection's dominant tone.`;
 }
 
 function drawPreview() {
+  previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  previewContext.imageSmoothingEnabled = false;
+
   if (!state.mosaicTiles.length) {
     if (state.workingImageData) {
-      previewContext.putImageData(state.workingImageData, 0, 0);
+      const sourceCanvas = document.createElement("canvas");
+      sourceCanvas.width = state.workingImageData.width;
+      sourceCanvas.height = state.workingImageData.height;
+      sourceCanvas.getContext("2d").putImageData(state.workingImageData, 0, 0);
+      const renderRect = getSnappedRenderRect();
+      previewContext.drawImage(
+        sourceCanvas,
+        renderRect.x,
+        renderRect.y,
+        renderRect.width,
+        renderRect.height
+      );
     }
     return;
   }
 
   ensureCachedPreview();
-  previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-  previewContext.drawImage(state.renderCache.canvas, 0, 0);
+  const renderRect = getSnappedRenderRect();
+  previewContext.drawImage(
+    state.renderCache.canvas,
+    renderRect.x,
+    renderRect.y,
+    renderRect.width,
+    renderRect.height
+  );
 
   if (state.selectedTileIndices.size) {
     drawSelectedTileOverlays();
@@ -1105,6 +2311,8 @@ function drawPreview() {
   if (state.dragSelection?.active && state.dragSelection.moved) {
     drawDragSelectionOverlay();
   }
+
+  drawTextOverlays();
 
   updateHoverInfo();
 }
@@ -1131,8 +2339,8 @@ function ensureCachedPreview() {
   }
 
   const cacheCanvas = state.renderCache.canvas;
-  cacheCanvas.width = previewCanvas.width;
-  cacheCanvas.height = previewCanvas.height;
+  cacheCanvas.width = state.image.width;
+  cacheCanvas.height = state.image.height;
   const cacheContext = cacheCanvas.getContext("2d");
   const shouldShowSelectionPreview = state.showSelectionPreview && previewSelectionSet.size > 0;
 
@@ -1142,30 +2350,39 @@ function ensureCachedPreview() {
 
   state.mosaicTiles.forEach((tile, index) => {
     const isSelected = previewSelectionSet.has(index);
+    const hasTransparentFill = Boolean(tile.fillContent && tile.fillRemoveBackground);
 
     if (shouldShowSelectionPreview) {
       if (isSelected) {
-        cacheContext.fillStyle = rgbToCss({
-          r: blendChannel(tile.color.r, 255, 0.08),
-          g: blendChannel(tile.color.g, 255, 0.08),
-          b: blendChannel(tile.color.b, 255, 0.08)
-        });
-        fillTile(cacheContext, tile);
-        cacheContext.fillStyle = "rgba(17, 17, 17, 0.14)";
-        fillTile(cacheContext, tile);
+        if (!hasTransparentFill) {
+          cacheContext.fillStyle = rgbToCss({
+            r: blendChannel(tile.color.r, 255, 0.08),
+            g: blendChannel(tile.color.g, 255, 0.08),
+            b: blendChannel(tile.color.b, 255, 0.08)
+          });
+          fillTile(cacheContext, tile);
+          cacheContext.fillStyle = "rgba(17, 17, 17, 0.14)";
+          fillTile(cacheContext, tile);
+        }
       } else {
-        const grayscale = Math.round(tile.color.r * 0.299 + tile.color.g * 0.587 + tile.color.b * 0.114);
-        cacheContext.fillStyle = rgbToCss({
-          r: blendChannel(tile.color.r, grayscale, 0.76),
-          g: blendChannel(tile.color.g, grayscale, 0.76),
-          b: blendChannel(tile.color.b, grayscale, 0.76)
-        });
-        fillTile(cacheContext, tile);
+        if (!hasTransparentFill) {
+          const grayscale = Math.round(tile.color.r * 0.299 + tile.color.g * 0.587 + tile.color.b * 0.114);
+          cacheContext.fillStyle = rgbToCss({
+            r: blendChannel(tile.color.r, grayscale, 0.76),
+            g: blendChannel(tile.color.g, grayscale, 0.76),
+            b: blendChannel(tile.color.b, grayscale, 0.76)
+          });
+          fillTile(cacheContext, tile);
+        }
       }
     } else {
-      cacheContext.fillStyle = rgbToCss(tile.color);
-      fillTile(cacheContext, tile);
+      if (!hasTransparentFill) {
+        cacheContext.fillStyle = rgbToCss(tile.color);
+        fillTile(cacheContext, tile);
+      }
     }
+
+    drawTileInnerContent(cacheContext, tile);
   });
 
   cacheContext.restore();
@@ -1174,18 +2391,20 @@ function ensureCachedPreview() {
 }
 
 function drawSelectedTileOverlays() {
-  previewContext.save();
-  previewContext.lineWidth = state.showSelectionPreview ? 1.8 : 2.2;
-  previewContext.strokeStyle = "rgba(17, 17, 17, 0.96)";
-
   if (!state.showSelectionPreview) {
-    previewContext.setLineDash([6, 4]);
+    return;
   }
+
+  previewContext.save();
+  previewContext.translate(state.imageOffsetX, state.imageOffsetY);
+  previewContext.scale(state.zoom, state.zoom);
+  previewContext.lineWidth = 1.8 / state.zoom;
+  previewContext.strokeStyle = "rgba(17, 17, 17, 0.96)";
 
   state.selectedTileIndices.forEach((tileIndex) => {
     const tile = state.mosaicTiles[tileIndex];
 
-    if (tile) {
+    if (tile && !(tile.fillContent && tile.fillRemoveBackground)) {
       strokeTile(previewContext, tile);
     }
   });
@@ -1196,7 +2415,7 @@ function drawSelectedTileOverlays() {
 function drawHoveredTileOverlay() {
   const hoveredTile = state.mosaicTiles[state.hoveredTileIndex];
 
-  if (!hoveredTile) {
+  if (!hoveredTile || (hoveredTile.fillContent && hoveredTile.fillRemoveBackground)) {
     return;
   }
 
@@ -1204,19 +2423,21 @@ function drawHoveredTileOverlay() {
   const matches = previewSelectionSet.has(state.hoveredTileIndex);
 
   previewContext.save();
-  previewContext.lineWidth = 2;
+  previewContext.translate(state.imageOffsetX, state.imageOffsetY);
+  previewContext.scale(state.zoom, state.zoom);
+  previewContext.lineWidth = 2 / state.zoom;
   previewContext.strokeStyle = matches ? "rgba(17, 17, 17, 0.98)" : "rgba(120, 120, 120, 0.98)";
   strokeTile(previewContext, hoveredTile);
   previewContext.restore();
 }
 
 function drawDragSelectionOverlay() {
-  const rect = getNormalizedRect(
+  const rect = imageRectToFrameRect(getNormalizedRect(
     state.dragSelection.startX,
     state.dragSelection.startY,
     state.dragSelection.currentX,
     state.dragSelection.currentY
-  );
+  ));
 
   previewContext.save();
   previewContext.lineWidth = 2;
@@ -1229,6 +2450,16 @@ function drawDragSelectionOverlay() {
 }
 
 function updateHoverInfo() {
+  if (state.dragImage?.active) {
+    hoverInfo.textContent = "Dragging image inside the frame.";
+    return;
+  }
+
+  if (state.dragText?.active) {
+    hoverInfo.textContent = "Dragging text to a new position.";
+    return;
+  }
+
   if (state.dragSelection?.active && state.dragSelection.moved) {
     const rect = getNormalizedRect(
       state.dragSelection.startX,
@@ -1238,13 +2469,36 @@ function updateHoverInfo() {
     );
     const areaTileCount = getTileIndicesInRect(rect).length;
     hoverInfo.textContent =
-      `Alan taranıyor. Kutudaki ${formatCount(areaTileCount)} mozaiğin baskın tonu bulunup benzerleri seçilecek.`;
+      `Scanning the area. The dominant tone among ${formatCount(areaTileCount)} tiles will be used to select similar tiles.`;
     return;
   }
 
   const explicitSelectionCount = state.selectedTileIndices.size;
   const paletteColor = state.palette[state.activeColorIndex];
   const previewSelectionSet = getPreviewSelectionSet();
+
+  if (state.interactionMode === "move") {
+    if (state.hoveredTextId) {
+      const activeText = state.textOverlays.find((overlay) => overlay.id === state.hoveredTextId);
+
+      if (activeText) {
+        hoverInfo.textContent = `"${activeText.text}" is selected. Drag it anywhere inside the frame.`;
+        return;
+      }
+    }
+
+    hoverInfo.textContent = "Transform mode is active. Drag the image, text, or emoji inside the frame.";
+    return;
+  }
+
+  if (state.hoveredTextId) {
+    const activeText = state.textOverlays.find((overlay) => overlay.id === state.hoveredTextId);
+
+    if (activeText) {
+      hoverInfo.textContent = `"${activeText.text}" is selected. Click and drag to move it.`;
+      return;
+    }
+  }
 
   if (state.hoveredTileIndex >= 0) {
     const hoveredTile = state.mosaicTiles[state.hoveredTileIndex];
@@ -1255,24 +2509,24 @@ function updateHoverInfo() {
     if (state.selectionReferenceColor) {
       const referenceDistance = getColorDistance(hoveredTile.color, state.selectionReferenceColor);
       hoverInfo.textContent =
-        `${hoveredHex} mozaiği imleç altında. Boyut: ${Math.round(paintBounds.width)} x ${Math.round(paintBounds.height)}px. ` +
-        `Referans uzaklığı: ${referenceDistance.toFixed(1)} / ${thresholdInput.value}. ` +
-        `${matches ? "Seçim içinde." : "Seçim dışında."}`;
+        `${hoveredHex} tile under cursor. Size ${Math.round(paintBounds.width)} x ${Math.round(paintBounds.height)} px. ` +
+        `Reference distance ${referenceDistance.toFixed(1)} / ${thresholdInput.value}. ` +
+        `${matches ? "Included in selection." : "Outside selection."}`;
       return;
     }
 
     if (paletteColor) {
       const hoveredDistance = getColorDistance(hoveredTile.color, paletteColor);
       hoverInfo.textContent =
-        `${paletteColor.hex} seçili. İmleç altı mozaik: ${hoveredHex}. ` +
-        `Boyut: ${Math.round(paintBounds.width)} x ${Math.round(paintBounds.height)}px. ` +
-        `Uzaklık: ${hoveredDistance.toFixed(1)} / ${thresholdInput.value}. ` +
-        `${matches ? "Bu mozaik seçim içinde." : "Bu mozaik seçim dışında."}`;
+        `${paletteColor.hex} active. Hover tile ${hoveredHex}. ` +
+        `Size ${Math.round(paintBounds.width)} x ${Math.round(paintBounds.height)} px. ` +
+        `Distance ${hoveredDistance.toFixed(1)} / ${thresholdInput.value}. ` +
+        `${matches ? "Included in selection." : "Outside selection."}`;
       return;
     }
 
     hoverInfo.textContent =
-      `${hoveredHex} mozaiği imleç altında. Tıkla seç, Shift ile ekle, sürükleyerek alanın baskın tonunu tara.`;
+      `${hoveredHex} tile under cursor. Click to select, Shift-click to add, or drag to scan the area tone.`;
     return;
   }
 
@@ -1283,22 +2537,22 @@ function updateHoverInfo() {
           state.selectionReferenceColor.g,
           state.selectionReferenceColor.b
         )
-      : "renk yok";
+      : "none";
     hoverInfo.textContent =
-      `${formatCount(explicitSelectionCount)} mozaik seçili. Referans ton: ${referenceHex}. ` +
-      `Önizleme ${state.showSelectionPreview ? "açık" : "kapalı"}.`;
+      `${formatCount(explicitSelectionCount)} tiles selected. Reference ${referenceHex}. ` +
+      `Preview ${state.showSelectionPreview ? "on" : "off"}.`;
     return;
   }
 
   if (paletteColor) {
     hoverInfo.textContent =
-      `${paletteColor.hex} seçili. Threshold içinde ${formatCount(state.renderCache.selectedTiles)} mozaik parçası bulundu. ` +
-      `Önizleme ${state.showSelectionPreview ? "açık" : "kapalı"}.`;
+      `${paletteColor.hex} active. ${formatCount(state.renderCache.selectedTiles)} matching tiles. ` +
+      `Preview ${state.showSelectionPreview ? "on" : "off"}.`;
     return;
   }
 
   hoverInfo.textContent =
-    "Bir renk seçtiğinde, threshold içindeki mozaikleri istersen önizlemede vurgulayabilirsin.";
+    "Choose a color to preview matching mosaic tiles.";
 }
 
 function updateSelectionPreviewToggleUI() {
@@ -1313,7 +2567,7 @@ function applyReplacement() {
   const targetIndices = getActiveSelectionIndices();
 
   if (!targetIndices.length) {
-    paletteSummary.textContent = "Değiştirme için önce mozaik seç veya bir renk belirle.";
+    paletteSummary.textContent = "Select tiles or choose a color before replacing.";
     return;
   }
 
@@ -1334,11 +2588,13 @@ function applyReplacement() {
     return tile;
   });
 
-  state.workingImageData = rasterizeTiles(state.mosaicTiles, previewCanvas.width, previewCanvas.height);
+  state.workingImageData = rasterizeTiles(state.mosaicTiles, state.image.width, state.image.height);
   invalidateSelectionCaches();
   state.autoPalette = buildWheelPalette(state.mosaicTiles, clampNumber(Number(paletteCountInput.value), 3, 16));
   syncPalette(previousHex);
   state.hoveredTileIndex = -1;
+  state.showSelectionPreview = false;
+  updateSelectionPreviewToggleUI();
   setSelectedTileIndices(targetIndices, {
     mode: "manual",
     referenceColor: replacementColor
@@ -1348,14 +2604,106 @@ function applyReplacement() {
   renderPalette();
   invalidateRenderCache();
   requestPreviewRender();
-  paletteSummary.textContent = `${formatCount(changedTiles)} mozaik parçası ${previousHex} rengine dönüştürüldü.`;
+  paletteSummary.textContent = `${formatCount(changedTiles)} tiles changed to ${previousHex}.`;
+}
+
+function applyTileContentFill(kind) {
+  const targetIndices = getActiveSelectionIndices();
+
+  if (!targetIndices.length) {
+    paletteSummary.textContent = "Select some tiles first.";
+    return;
+  }
+
+  const textCharacters = Array.from(String(tileFillTextInput?.value || "").trim()).filter(Boolean);
+  const content = kind === "emoji" ? String(tileFillEmojiInput?.value || "").trim() : textCharacters.join("");
+
+  if (!content) {
+    paletteSummary.textContent = kind === "emoji" ? "Choose an emoji first." : "Type a letter first.";
+    return;
+  }
+
+  pushAppHistory();
+  const targetSet = new Set(targetIndices);
+  const fillColor = String(tileFillColorInput?.value || replacementColorInput.value || "#111111").toUpperCase();
+  const fillFontFamily = tileFillFontFamilyInput?.value || "'Space Mono', monospace";
+  const fillRemoveBackground = Boolean(tileFillRemoveBgInput?.checked);
+  let changedTiles = 0;
+  let letterCursor = 0;
+
+  state.mosaicTiles = state.mosaicTiles.map((tile, index) => {
+    if (!targetSet.has(index)) {
+      return tile;
+    }
+
+    const nextContent =
+      kind === "emoji"
+        ? content
+        : textCharacters[letterCursor++ % textCharacters.length];
+
+    changedTiles += 1;
+    return {
+      ...tile,
+      fillContent: nextContent,
+      fillType: kind,
+      fillColor,
+      fillFontFamily,
+      fillRemoveBackground
+    };
+  });
+
+  state.workingImageData = rasterizeTiles(state.mosaicTiles, state.image.width, state.image.height);
+  invalidateSelectionCaches();
+  invalidateRenderCache();
+  requestPreviewRender();
+  paletteSummary.textContent =
+    `${formatCount(changedTiles)} tiles filled with ${kind === "emoji" ? "emoji" : "letter"} "${content}".`;
+}
+
+function syncSelectedTileFillBackgroundRemoval(removeBackground) {
+  if (!state.mosaicTiles.length) {
+    return;
+  }
+
+  const targetIndices = getActiveSelectionIndices();
+
+  if (!targetIndices.length) {
+    return;
+  }
+
+  const targetSet = new Set(targetIndices);
+  let changedTiles = 0;
+
+  state.mosaicTiles = state.mosaicTiles.map((tile, index) => {
+    if (!targetSet.has(index) || !tile.fillContent) {
+      return tile;
+    }
+
+    changedTiles += 1;
+    return {
+      ...tile,
+      fillRemoveBackground: removeBackground
+    };
+  });
+
+  if (!changedTiles) {
+    return;
+  }
+
+  state.workingImageData = rasterizeTiles(state.mosaicTiles, state.image.width, state.image.height);
+  invalidateSelectionCaches();
+  invalidateRenderCache();
+  requestPreviewRender();
+  paletteSummary.textContent = removeBackground
+    ? `${formatCount(changedTiles)} filled tiles now use a transparent background.`
+    : `${formatCount(changedTiles)} filled tiles now keep their tile background.`;
 }
 
 function applyDatamosh() {
   const sourceIndices = getActiveSelectionIndices();
 
   if (!sourceIndices.length) {
-    paletteSummary.textContent = "Datamosh için önce mozaik seç veya bir renk belirle.";
+    paletteSummary.textContent = "Select tiles or choose a color first for pixel shift.";
     return;
   }
 
@@ -1372,7 +2720,7 @@ function applyDatamosh() {
     }));
 
   if (!sourceTiles.length) {
-    paletteSummary.textContent = "Datamosh için kaynak mozaik bulunamadı.";
+    paletteSummary.textContent = "No source tiles found for pixel shift.";
     return;
   }
 
@@ -1400,7 +2748,7 @@ function applyDatamosh() {
   });
 
   if (!changedIndices.size) {
-    paletteSummary.textContent = "Datamosh uygulandı ama seçili yönde gidilecek mozaik kalmadı.";
+    paletteSummary.textContent = "Pixel shift ran, but no tiles remained in that direction.";
     return;
   }
 
@@ -1408,7 +2756,7 @@ function applyDatamosh() {
   const dominantColor = getDominantColorFromTileIndices(changedIndexList, updatedTiles);
 
   state.mosaicTiles = updatedTiles;
-  state.workingImageData = rasterizeTiles(state.mosaicTiles, previewCanvas.width, previewCanvas.height);
+  state.workingImageData = rasterizeTiles(state.mosaicTiles, state.image.width, state.image.height);
   invalidateSelectionCaches();
   state.autoPalette = buildWheelPalette(state.mosaicTiles, clampNumber(Number(paletteCountInput.value), 3, 16));
   syncPalette(dominantColor ? rgbToHex(dominantColor.r, dominantColor.g, dominantColor.b) : null);
@@ -1419,28 +2767,31 @@ function applyDatamosh() {
   }
 
   renderPalette();
-  refreshPreviewCanvas({
-    summaryMessage:
-      `${formatCount(changedIndices.size)} mozaik parçası ${directionLabel(direction)} yönünde ${amount} adım datamosh ile kopyalandı.`
-  });
+  invalidateRenderCache();
+  requestPreviewRender();
+  paletteSummary.textContent =
+    `${formatCount(changedIndices.size)} tiles were copied ${amount} steps toward ${directionLabel(direction)}.`;
 }
 
 function rasterizeTiles(tiles, width, height) {
-  const data = new Uint8ClampedArray(width * height * 4);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return new ImageData(width, height);
+  }
 
   tiles.forEach((tile) => {
-    for (let y = tile.y; y < tile.y + tile.height; y += 1) {
-      for (let x = tile.x; x < tile.x + tile.width; x += 1) {
-        const index = (y * width + x) * 4;
-        data[index] = tile.color.r;
-        data[index + 1] = tile.color.g;
-        data[index + 2] = tile.color.b;
-        data[index + 3] = 255;
-      }
+    if (!(tile.fillContent && tile.fillRemoveBackground)) {
+      context.fillStyle = rgbToCss(tile.color);
+      fillTile(context, tile);
     }
+    drawTileInnerContent(context, tile);
   });
 
-  return new ImageData(data, width, height);
+  return context.getImageData(0, 0, width, height);
 }
 
 function syncPalette(preferredHex = null) {
@@ -1481,7 +2832,7 @@ function syncPalette(preferredHex = null) {
 }
 
 function beginCanvasSelectionDrag(event) {
-  const point = getCanvasPointFromEvent(event);
+  const point = framePointToImagePoint(getCanvasPointFromEvent(event));
   const startTileIndex = getTileIndexFromPoint(point.x, point.y);
 
   state.dragSelection = {
@@ -1500,7 +2851,7 @@ function beginCanvasSelectionDrag(event) {
 }
 
 function updateCanvasSelectionDrag(event) {
-  const point = getCanvasPointFromEvent(event);
+  const point = framePointToImagePoint(getCanvasPointFromEvent(event));
 
   state.dragSelection.currentX = point.x;
   state.dragSelection.currentY = point.y;
@@ -1514,7 +2865,7 @@ function updateCanvasSelectionDrag(event) {
 
 function endCanvasSelectionDrag(event) {
   const interaction = state.dragSelection;
-  const point = getCanvasPointFromEvent(event);
+  const point = framePointToImagePoint(getCanvasPointFromEvent(event));
   state.dragSelection.currentX = point.x;
   state.dragSelection.currentY = point.y;
   state.dragSelection = null;
@@ -1537,6 +2888,41 @@ function endCanvasSelectionDrag(event) {
     additive: interaction.shiftKey,
     subtractive: interaction.altKey
   });
+}
+
+function invertCurrentSelection() {
+  pushSelectionHistory();
+
+  const nextSelected = [];
+
+  for (let index = 0; index < state.mosaicTiles.length; index += 1) {
+    if (!state.selectedTileIndices.has(index)) {
+      nextSelected.push(index);
+    }
+  }
+
+  if (!nextSelected.length) {
+    clearExplicitSelection();
+    renderPalette();
+    paletteSummary.textContent = "Invert selection left no tiles selected.";
+    return;
+  }
+
+  const referenceColor = getDominantColorFromTileIndices(nextSelected);
+
+  if (referenceColor) {
+    focusColorInPalette(referenceColor, { rerender: false });
+  }
+
+  enableSelectionPreviewFromSelectionAction();
+  setSelectedTileIndices(nextSelected, {
+    mode: "manual",
+    referenceColor
+  });
+  renderPalette();
+  invalidateRenderCache();
+  requestPreviewRender();
+  paletteSummary.textContent = `${formatCount(nextSelected.length)} tiles selected by inversion.`;
 }
 
 function handleCanvasTileSelection(tileIndex, options = {}) {
@@ -1562,7 +2948,7 @@ function handleCanvasTileSelection(tileIndex, options = {}) {
 
   if (!nextSelected.size) {
     clearExplicitSelection();
-    paletteSummary.textContent = "Seçili mozaik kaldırıldı.";
+    paletteSummary.textContent = "Selected tiles removed.";
     renderPalette();
     return;
   }
@@ -1577,8 +2963,8 @@ function handleCanvasTileSelection(tileIndex, options = {}) {
   requestPreviewRender();
   paletteSummary.textContent =
     additive
-      ? `${formatCount(nextSelected.size)} mozaik seçili. İstersen benzerlerini de yakalayabilirsin.`
-      : `${rgbToHex(tile.color.r, tile.color.g, tile.color.b)} mozaiği seçildi.`;
+      ? `${formatCount(nextSelected.size)} tiles selected. You can expand this with similar tiles.`
+      : `${rgbToHex(tile.color.r, tile.color.g, tile.color.b)} tile selected.`;
 }
 
 function handleCanvasAreaSelection(rect, options = {}) {
@@ -1588,7 +2974,7 @@ function handleCanvasAreaSelection(rect, options = {}) {
   pushSelectionHistory();
 
   if (!areaTileIndices.length) {
-    paletteSummary.textContent = "Alan seçiminde mozaik bulunamadı.";
+    paletteSummary.textContent = "No tiles were found in the dragged area.";
     requestPreviewRender();
     return;
   }
@@ -1602,7 +2988,7 @@ function handleCanvasAreaSelection(rect, options = {}) {
     if (!nextSelected.size) {
       clearExplicitSelection();
       renderPalette();
-      paletteSummary.textContent = "Alt ile alan seçimden çıkarıldı.";
+      paletteSummary.textContent = "Alt removed the dragged area from the selection.";
       return;
     }
 
@@ -1613,7 +2999,7 @@ function handleCanvasAreaSelection(rect, options = {}) {
     renderPalette();
     invalidateRenderCache();
     requestPreviewRender();
-    paletteSummary.textContent = `Alt ile ${formatCount(areaTileIndices.length)} mozaik seçimden çıkarıldı.`;
+    paletteSummary.textContent = `Alt removed ${formatCount(areaTileIndices.length)} tiles from the selection.`;
     return;
   }
 
@@ -1642,7 +3028,7 @@ function handleCanvasAreaSelection(rect, options = {}) {
   }
   renderPalette();
   paletteSummary.textContent =
-    `Alanın baskın tonu ${rgbToHex(dominantColor.r, dominantColor.g, dominantColor.b)} bulundu ve benzer mozaikler seçildi.`;
+    `The dominant tone ${rgbToHex(dominantColor.r, dominantColor.g, dominantColor.b)} was found and similar tiles were selected.`;
 }
 
 function selectSimilarTilesByReference(referenceColor) {
@@ -1758,7 +3144,7 @@ function getActiveSelectionData() {
   let indices = [];
 
   if (state.selectedTileIndices.size) {
-    if (state.selectionReferenceColor && (state.selectionMode === "similar" || state.selectedTileIndices.size === 1)) {
+    if (state.selectionReferenceColor && state.selectionMode === "similar") {
       indices = getSimilarTileIndices(state.selectionReferenceColor, Number(thresholdInput.value));
     } else {
       indices = getSelectedTileIndicesArray();
@@ -1856,8 +3242,8 @@ function getTileIndexFromEvent(event) {
 
 function getTileIndexFromPoint(x, y) {
   if (state.mosaicSettings?.mode === "count") {
-    const row = clampNumber(Math.floor((y / previewCanvas.height) * state.mosaicSettings.rows), 0, state.mosaicSettings.rows - 1);
-    const column = clampNumber(Math.floor((x / previewCanvas.width) * state.mosaicSettings.columns), 0, state.mosaicSettings.columns - 1);
+    const row = clampNumber(Math.floor((y / state.image.height) * state.mosaicSettings.rows), 0, state.mosaicSettings.rows - 1);
+    const column = clampNumber(Math.floor((x / state.image.width) * state.mosaicSettings.columns), 0, state.mosaicSettings.columns - 1);
     const quickIndex = row * state.mosaicSettings.columns + column;
     const quickTile = state.mosaicTiles[quickIndex];
 
@@ -2003,7 +3389,66 @@ function exportSvg() {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  paletteSummary.textContent = "SVG çıktısı indirildi.";
+  paletteSummary.textContent = "SVG export downloaded.";
+}
+
+function exportRaster(format) {
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = previewCanvas.width;
+  exportCanvas.height = previewCanvas.height;
+  const context = exportCanvas.getContext("2d");
+
+  if (!context) {
+    paletteSummary.textContent = "Raster export could not be created.";
+    return;
+  }
+
+  const backgroundFill = resolveRasterBackgroundFill(format);
+
+  if (backgroundFill) {
+    context.fillStyle = backgroundFill;
+    context.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+  } else {
+    context.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+  }
+
+  ensureCachedPreview();
+  context.imageSmoothingEnabled = false;
+  const renderRect = getSnappedRenderRect();
+  context.drawImage(
+    state.renderCache.canvas,
+    renderRect.x,
+    renderRect.y,
+    renderRect.width,
+    renderRect.height
+  );
+  drawTextOverlaysToContext(context);
+
+  const mimeType = format === "jpg" ? "image/jpeg" : "image/png";
+  const extension = format === "jpg" ? "jpg" : "png";
+  const quality = format === "jpg" ? 0.96 : undefined;
+
+  exportCanvas.toBlob(
+    (blob) => {
+      if (!blob) {
+        paletteSummary.textContent = `${format.toUpperCase()} export could not be created.`;
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      link.href = url;
+      link.download = `pixelmaxxxing-${timestamp}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      paletteSummary.textContent = `${format.toUpperCase()} export downloaded.`;
+    },
+    mimeType,
+    quality
+  );
 }
 
 function buildSvgMarkup() {
@@ -2020,20 +3465,52 @@ function buildSvgMarkup() {
       : "";
 
   const shapes = state.mosaicTiles.map((tile) => {
+    if (tile.fillContent && tile.fillRemoveBackground) {
+      return "";
+    }
+
     const bounds = getPaintBounds(tile);
+    const drawX = bounds.x * state.zoom + state.imageOffsetX;
+    const drawY = bounds.y * state.zoom + state.imageOffsetY;
+    const drawWidth = bounds.width * state.zoom;
+    const drawHeight = bounds.height * state.zoom;
     const attrs = state.mosaicBlur > 0 ? ` filter="url(#${blurId})"` : "";
     const fill = escapeSvg(rgbToCss(tile.color));
 
     if (state.mosaicShape === "round") {
-      return `<ellipse cx="${escapeSvg(bounds.x + bounds.width / 2)}" cy="${escapeSvg(bounds.y + bounds.height / 2)}" rx="${escapeSvg(bounds.width / 2)}" ry="${escapeSvg(bounds.height / 2)}" fill="${fill}"${attrs} />`;
+      return `<ellipse cx="${escapeSvg(drawX + drawWidth / 2)}" cy="${escapeSvg(drawY + drawHeight / 2)}" rx="${escapeSvg(drawWidth / 2)}" ry="${escapeSvg(drawHeight / 2)}" fill="${fill}"${attrs} />`;
     }
 
     const seamlessAttrs = useSeamlessSquareExport
       ? ` shape-rendering="crispEdges" stroke="${fill}" stroke-width="1" paint-order="stroke fill"`
       : "";
 
-    return `<rect x="${escapeSvg(bounds.x)}" y="${escapeSvg(bounds.y)}" width="${escapeSvg(bounds.width)}" height="${escapeSvg(bounds.height)}" rx="0" ry="0" fill="${fill}"${seamlessAttrs}${attrs} />`;
+    return `<rect x="${escapeSvg(drawX)}" y="${escapeSvg(drawY)}" width="${escapeSvg(drawWidth)}" height="${escapeSvg(drawHeight)}" rx="0" ry="0" fill="${fill}"${seamlessAttrs}${attrs} />`;
   }).join("");
+
+  const tileTextMarkup = state.mosaicTiles
+    .filter((tile) => tile.fillContent)
+    .map((tile) => {
+      const bounds = getPaintBounds(tile);
+      const drawX = bounds.x * state.zoom + state.imageOffsetX;
+      const drawY = bounds.y * state.zoom + state.imageOffsetY;
+      const drawWidth = bounds.width * state.zoom;
+      const drawHeight = bounds.height * state.zoom;
+      const fontSize = Math.max(Math.min(drawWidth, drawHeight) * 0.7, 6);
+      const fontFamily = normalizeFontFamilyForSvg(
+        tile.fillType === "emoji" ? EMOJI_FONT_STACK : tile.fillFontFamily || "'Space Mono', monospace"
+      );
+
+      return `<text x="${escapeSvg(drawX + drawWidth / 2)}" y="${escapeSvg(drawY + drawHeight / 2)}" fill="${escapeSvg(tile.fillColor || "#111111")}" font-family="${escapeSvg(fontFamily)}" font-size="${escapeSvg(fontSize)}" font-weight="${tile.fillType === "emoji" ? "400" : "700"}" dominant-baseline="middle" text-anchor="middle">${escapeSvg(tile.fillContent)}</text>`;
+    })
+    .join("");
+
+  const textMarkup = state.textOverlays
+    .map((overlay) => {
+      const x = overlay.align === "center" ? ` text-anchor="middle"` : "";
+      return `<text x="${escapeSvg(overlay.x)}" y="${escapeSvg(overlay.y)}" fill="${escapeSvg(overlay.color)}" font-family="${escapeSvg(normalizeFontFamilyForSvg(overlay.fontFamily))}" font-size="${escapeSvg(overlay.size)}" font-weight="${escapeSvg(overlay.fontWeight || "400")}" font-style="${escapeSvg(overlay.fontStyle || "normal")}" dominant-baseline="hanging"${x}>${escapeSvg(overlay.text)}</text>`;
+    })
+    .join("");
 
   return [
     `<?xml version="1.0" encoding="UTF-8"?>`,
@@ -2043,6 +3520,8 @@ function buildSvgMarkup() {
     `<g shape-rendering="${useSeamlessSquareExport ? "crispEdges" : "geometricPrecision"}">`,
     shapes,
     `</g>`,
+    tileTextMarkup,
+    textMarkup,
     `</svg>`
   ].join("");
 }
@@ -2063,11 +3542,50 @@ function getSvgBackgroundMarkup() {
   return `<rect x="0" y="0" width="${previewCanvas.width}" height="${previewCanvas.height}" fill="${escapeSvg(fill)}" />`;
 }
 
+function resolveRasterBackgroundFill(format) {
+  if (state.previewBackgroundMode === "transparent") {
+    return format === "jpg" ? "#ffffff" : "";
+  }
+
+  if (state.previewBackgroundMode === "black") {
+    return "#000000";
+  }
+
+  if (state.previewBackgroundMode === "custom") {
+    return state.previewBackgroundColor || "#ff6b35";
+  }
+
+  return "#ffffff";
+}
+
+function normalizeFontFamilyForSvg(fontFamily) {
+  return String(fontFamily || "Space Mono").replace(/['"]/g, "");
+}
+
 function fillTile(context, tile) {
   const bounds = getPaintBounds(tile);
   context.beginPath();
   addTilePath(context, bounds);
   context.fill();
+}
+
+function drawTileInnerContent(context, tile) {
+  if (!tile.fillContent) {
+    return;
+  }
+
+  const bounds = getPaintBounds(tile);
+  const fontSize = Math.max(Math.min(bounds.width, bounds.height) * 0.7, 6);
+  const fontFamily =
+    tile.fillType === "emoji" ? EMOJI_FONT_STACK : tile.fillFontFamily || "'Space Mono', monospace";
+
+  context.save();
+  context.fillStyle = tile.fillColor || "#111111";
+  context.font = `${tile.fillType === "emoji" ? "400" : "700"} ${Math.round(fontSize)}px ${fontFamily}`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(tile.fillContent, bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  context.restore();
 }
 
 function strokeTile(context, tile) {
@@ -2190,6 +3708,168 @@ function cloneImageData(imageData) {
   return new ImageData(new Uint8ClampedArray(imageData.data), imageData.width, imageData.height);
 }
 
+function cloneTileArray(tiles) {
+  return tiles.map((tile) => ({
+    ...tile,
+    color: tile.color ? { ...tile.color } : tile.color,
+    hsl: tile.hsl ? { ...tile.hsl } : tile.hsl
+  }));
+}
+
+function clonePaletteArray(colors) {
+  return colors.map((color) => ({
+    ...color,
+    hsl: color.hsl ? { ...color.hsl } : color.hsl
+  }));
+}
+
+function cloneTextOverlayArray(overlays) {
+  return overlays.map((overlay) => ({ ...overlay }));
+}
+
+function createTextProcessSnapshot() {
+  return {
+    workingImageData: cloneImageData(state.workingImageData),
+    textOverlays: cloneTextOverlayArray(state.textOverlays),
+    activeTextId: state.activeTextId,
+    hoveredTextId: state.hoveredTextId,
+    customPalette: clonePaletteArray(state.customPalette)
+  };
+}
+
+function renderCurrentOverlaysIntoWorkingImage() {
+  const rasterCanvas = document.createElement("canvas");
+  rasterCanvas.width = state.image.width;
+  rasterCanvas.height = state.image.height;
+  const rasterContext = rasterCanvas.getContext("2d");
+
+  if (!rasterContext || !state.workingImageData) {
+    return null;
+  }
+
+  rasterContext.putImageData(cloneImageData(state.workingImageData), 0, 0);
+  rasterContext.save();
+  rasterContext.translate(-state.imageOffsetX, -state.imageOffsetY);
+  rasterContext.scale(1 / state.zoom, 1 / state.zoom);
+  drawOverlayArrayToContext(rasterContext, state.textOverlays, 1, false);
+  rasterContext.restore();
+  return rasterContext.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height);
+}
+
+function rebuildWorkingImageFromProcessedLayers() {
+  if (!state.originalImageData) {
+    return;
+  }
+
+  const rasterCanvas = document.createElement("canvas");
+  rasterCanvas.width = state.originalImageData.width;
+  rasterCanvas.height = state.originalImageData.height;
+  const rasterContext = rasterCanvas.getContext("2d");
+
+  if (!rasterContext) {
+    return;
+  }
+
+  rasterContext.putImageData(cloneImageData(state.originalImageData), 0, 0);
+
+  if (state.processedTextOverlays.length) {
+    rasterContext.save();
+    rasterContext.translate(-state.imageOffsetX, -state.imageOffsetY);
+    rasterContext.scale(1 / state.zoom, 1 / state.zoom);
+    drawOverlayArrayToContext(rasterContext, state.processedTextOverlays, 1, false);
+    rasterContext.restore();
+  }
+
+  state.workingImageData = rasterContext.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height);
+  analyzeImage();
+}
+
+function toggleTextProcessing() {
+  if (state.textProcessSession) {
+    state.workingImageData = cloneImageData(state.textProcessSession.workingImageData);
+    state.customPalette = clonePaletteArray(state.textProcessSession.customPalette);
+    state.textOverlays = cloneTextOverlayArray(state.textProcessSession.textOverlays);
+    state.activeTextId = state.textProcessSession.activeTextId;
+    state.hoveredTextId = state.textProcessSession.hoveredTextId;
+    state.dragText = null;
+    state.textProcessSession = null;
+    analyzeImage();
+    updateTextUi();
+    textStatus.textContent = "Processed text removed. You can edit it again.";
+    return;
+  }
+
+  if (!state.textOverlays.length) {
+    textStatus.textContent = "Add some text or emoji first.";
+    return;
+  }
+
+  const processedImageData = renderCurrentOverlaysIntoWorkingImage();
+
+  if (!processedImageData) {
+    textStatus.textContent = "Text processing failed.";
+    return;
+  }
+
+  state.textProcessSession = createTextProcessSnapshot();
+  state.workingImageData = processedImageData;
+  state.textOverlays = [];
+  state.activeTextId = null;
+  state.hoveredTextId = null;
+  state.dragText = null;
+  analyzeImage();
+  updateTextUi();
+  textStatus.textContent = "Text processed. Apply to lock it in, or Remove to edit again.";
+}
+
+function applyProcessedTextToImage() {
+  if (!state.textProcessSession) {
+    textStatus.textContent = "Process the text first.";
+    return;
+  }
+
+  state.textProcessSession = null;
+  state.activeTextId = null;
+  state.hoveredTextId = null;
+  state.dragText = null;
+  updateTextUi();
+  textStatus.textContent = "Processed text applied permanently.";
+  requestPreviewRender();
+}
+
+function updateTextUi() {
+  const activeText = getActiveTextOverlay();
+
+  removeTextButton.disabled = !activeText;
+  processTextButton.disabled = !state.textOverlays.length && !state.textProcessSession;
+  applyTextProcessButton.disabled = !state.textProcessSession;
+  processTextButton.textContent = state.textProcessSession ? "Remove" : "Process";
+
+  if (!activeText) {
+    if (!state.textProcessSession && !textStatus.textContent) {
+      textStatus.textContent = "After adding text, you can click and drag it on the canvas.";
+    }
+    return;
+  }
+
+  textContentInput.value = activeText.text;
+  if (activeText.type !== "emoji") {
+    textFontFamilyInput.value = activeText.fontFamily;
+    textColorInput.value = activeText.color;
+    if (textFontWeightInput) {
+      textFontWeightInput.value = activeText.fontWeight || "400";
+    }
+    if (textFontStyleInput) {
+      textFontStyleInput.value = activeText.fontStyle || "normal";
+    }
+  }
+  textSizeInput.value = String(Math.round(activeText.size));
+  textStatus.textContent =
+    activeText.type === "emoji"
+      ? "Active emoji selected. Drag it on the canvas to reposition it."
+      : "Active text selected. Drag it on the canvas to reposition it.";
+}
+
 function clampNumber(value, min, max = Number.POSITIVE_INFINITY) {
   if (Number.isNaN(value)) {
     return min;
@@ -2249,13 +3929,13 @@ function getDirectionOffset(direction) {
 function directionLabel(direction) {
   switch (direction) {
     case "left":
-      return "sola";
+      return "left";
     case "down":
-      return "aşağı";
+      return "down";
     case "up":
-      return "yukarı";
+      return "up";
     default:
-      return "sağa";
+      return "right";
   }
 }
 
@@ -2266,3 +3946,763 @@ function escapeSvg(value) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function formatCount(value) {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+function directionLabel(direction) {
+  switch (direction) {
+    case "left":
+      return "left";
+    case "down":
+      return "down";
+    case "up":
+      return "up";
+    default:
+      return "right";
+  }
+}
+
+function getOverlayFontFamily(overlay) {
+  if (!overlay) {
+    return "'Space Mono', monospace";
+  }
+
+  if (overlay.type === "emoji") {
+    return EMOJI_FONT_STACK;
+  }
+
+  return `${overlay.fontFamily}, ${EMOJI_FONT_STACK}`;
+}
+
+function renderTextLayerList() {
+  if (!textLayerList) {
+    return;
+  }
+
+  const pendingProcessedLayers = state.textProcessSession?.textOverlays || [];
+  const visibleLayers = [
+    ...state.textOverlays.map((overlay) => ({ overlay, source: "editable" })),
+    ...pendingProcessedLayers.map((overlay) => ({ overlay, source: "session" })),
+    ...state.processedTextOverlays.map((overlay) => ({ overlay, source: "processed" }))
+  ];
+
+  if (!visibleLayers.length) {
+    textLayerList.innerHTML = '<p class="text-layer-empty">No text or emoji layers yet.</p>';
+    return;
+  }
+
+  textLayerList.innerHTML = visibleLayers
+    .slice()
+    .reverse()
+    .map(({ overlay, source }) => {
+      const badge =
+        source === "processed"
+          ? overlay.type === "emoji"
+            ? "PROCESSED EMOJI"
+            : "PROCESSED TEXT"
+          : source === "session"
+            ? overlay.type === "emoji"
+              ? "PENDING EMOJI"
+              : "PENDING TEXT"
+            : overlay.type === "emoji"
+              ? "EMOJI"
+              : "TEXT";
+      const isActiveEditable = source === "editable" && overlay.id === state.activeTextId;
+      const isActiveProcessed =
+        source !== "editable" &&
+        overlay.id === state.activeProcessedTextId &&
+        source === state.activeProcessedTextSource;
+      const activeClass = isActiveEditable || isActiveProcessed ? " is-active" : "";
+
+      return `
+        <button class="text-layer-item${activeClass}" type="button" data-text-layer-id="${overlay.id}" data-text-layer-source="${source}">
+          <span class="text-layer-badge">${badge}</span>
+          <span class="text-layer-text">${escapeHtml(overlay.text || badge)}</span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function selectTextLayer(textId) {
+  const overlay = state.textOverlays.find((item) => item.id === textId);
+
+  if (overlay) {
+    state.activeTextId = overlay.id;
+    state.activeProcessedTextId = null;
+    state.activeProcessedTextSource = null;
+    state.hoveredTextId = overlay.id;
+    setInteractionMode("move");
+    updateTextUi();
+    requestPreviewRender();
+  }
+}
+
+function setInteractionMode(mode) {
+  state.interactionMode = mode;
+  state.hoveredTileIndex = -1;
+  state.hoveredTextId = null;
+
+  if (mode === "move") {
+    setSelectionPreviewVisibility(false);
+    hoverInfo.textContent = "Transform mode is active. Drag the image, text, or emoji inside the frame.";
+  } else {
+    hoverInfo.textContent = "Click or drag on the mosaic to make a selection.";
+  }
+
+  updateInteractionModeUi();
+  updateHoverInfo();
+  requestPreviewRender();
+}
+
+function updateInteractionModeUi() {
+  modeSelectButton.classList.toggle("is-active", state.interactionMode === "select");
+  modeMoveButton.classList.toggle("is-active", state.interactionMode === "move");
+  previewCanvas.style.cursor = state.interactionMode === "move" ? "grab" : "crosshair";
+}
+
+function addOrUpdateTextOverlay() {
+  if (!state.image) {
+    textStatus.textContent = "Choose an image first.";
+    return;
+  }
+
+  const value = textContentInput.value.trim();
+
+  if (!value) {
+    textStatus.textContent = "Type some text first.";
+    return;
+  }
+
+  const fontFamily = textFontFamilyInput.value || "'Space Mono', monospace";
+  const size = clampNumber(Number(textSizeInput.value), 8, 320);
+  const color = textColorInput.value || "#111111";
+  const fontWeight = textFontWeightInput?.value || "400";
+  const fontStyle = textFontStyleInput?.value || "normal";
+  const activeText = getActiveTextOverlay();
+
+  if (activeText) {
+    activeText.text = value;
+    activeText.fontFamily = activeText.type === "emoji" ? activeText.fontFamily : fontFamily;
+    activeText.size = size;
+    activeText.color = activeText.type === "emoji" ? "#111111" : color;
+    activeText.fontWeight = activeText.type === "emoji" ? "400" : fontWeight;
+    activeText.fontStyle = activeText.type === "emoji" ? "normal" : fontStyle;
+    textStatus.textContent = activeText.type === "emoji" ? "Selected emoji updated." : "Selected text updated.";
+  } else {
+    const overlay = {
+      id: `text-${Date.now()}`,
+      text: value,
+      fontFamily,
+      size,
+      color,
+      fontWeight,
+      fontStyle,
+      type: "text",
+      x: Math.round(previewCanvas.width * 0.5),
+      y: Math.round(previewCanvas.height * 0.5),
+      align: "center"
+    };
+    state.textOverlays.push(overlay);
+    state.activeTextId = overlay.id;
+    state.hoveredTextId = overlay.id;
+    textStatus.textContent = "Text added. Drag it inside the preview.";
+  }
+
+  updateTextUi();
+  requestPreviewRender();
+}
+
+function addEmojiOverlay() {
+  if (!state.image) {
+    textStatus.textContent = "Choose an image first.";
+    return;
+  }
+
+  const emoji = emojiPickerInput.value?.trim();
+
+  if (!emoji) {
+    textStatus.textContent = "Choose an emoji first.";
+    return;
+  }
+
+  const size = clampNumber(Number(textSizeInput.value), 8, 320);
+  const overlay = {
+    id: `emoji-${Date.now()}`,
+    text: emoji,
+    fontFamily: EMOJI_FONT_STACK,
+    size,
+    color: "#111111",
+    fontWeight: "400",
+    fontStyle: "normal",
+    type: "emoji",
+    x: Math.round(previewCanvas.width * 0.5),
+    y: Math.round(previewCanvas.height * 0.5),
+    align: "center"
+  };
+
+  state.textOverlays.push(overlay);
+  state.activeTextId = overlay.id;
+  state.hoveredTextId = overlay.id;
+  textStatus.textContent = "Emoji added. Drag it inside the preview.";
+  updateTextUi();
+  requestPreviewRender();
+}
+
+function removeActiveTextOverlay() {
+  if (state.activeTextId) {
+    pushAppHistory();
+    state.textOverlays = state.textOverlays.filter((overlay) => overlay.id !== state.activeTextId);
+    state.activeTextId = null;
+    state.activeProcessedTextId = null;
+    state.activeProcessedTextSource = null;
+    state.hoveredTextId = null;
+    textStatus.textContent = "Selected layer removed.";
+    updateTextUi();
+    requestPreviewRender();
+    return;
+  }
+
+  if (!state.activeProcessedTextId) {
+    return;
+  }
+
+  pushAppHistory();
+
+  if (state.activeProcessedTextSource === "session" && state.textProcessSession) {
+    state.textProcessSession.textOverlays = state.textProcessSession.textOverlays.filter(
+      (overlay) => overlay.id !== state.activeProcessedTextId
+    );
+
+    state.processedTextOverlays = cloneTextOverlayArray(state.textProcessSession.textOverlays);
+    rebuildWorkingImageFromProcessedLayers();
+  } else {
+    state.processedTextOverlays = state.processedTextOverlays.filter(
+      (overlay) => overlay.id !== state.activeProcessedTextId
+    );
+    rebuildWorkingImageFromProcessedLayers();
+  }
+
+  state.activeProcessedTextId = null;
+  state.activeProcessedTextSource = null;
+  textStatus.textContent = "Selected processed layer removed.";
+  updateTextUi();
+  requestPreviewRender();
+}
+
+function centerActiveTextOverlay() {
+  const activeText = getActiveTextOverlay();
+
+  if (!activeText) {
+    return;
+  }
+
+  pushAppHistory();
+  activeText.x = Math.round(previewCanvas.width * 0.5);
+  activeText.y = Math.round(previewCanvas.height * 0.5);
+  activeText.align = "center";
+  textStatus.textContent = "Layer centered in the preview.";
+  requestPreviewRender();
+}
+
+function drawTextOverlaysToContext(context, scale = 1) {
+  drawOverlayArrayToContext(context, state.textOverlays, scale, true);
+}
+
+function drawOverlayArrayToContext(context, overlays, scale = 1, showSelectionFrame = false) {
+  if (!overlays.length) {
+    return;
+  }
+
+  context.save();
+  context.textBaseline = "top";
+
+  overlays.forEach((overlay) => {
+    const fontWeight = overlay.fontWeight || "400";
+    const fontStyle = overlay.fontStyle || "normal";
+    context.font = `${fontStyle} ${fontWeight} ${Math.round(overlay.size * scale)}px ${getOverlayFontFamily(overlay)}`;
+    context.fillStyle = overlay.color;
+    context.textAlign = overlay.align || "left";
+    context.fillText(overlay.text, overlay.x * scale, overlay.y * scale);
+
+    if (showSelectionFrame && context === previewContext && overlay.id === state.activeTextId) {
+      const bounds = getTextOverlayBounds(overlay);
+      context.save();
+      context.strokeStyle = "rgba(17, 17, 17, 0.55)";
+      context.lineWidth = 1;
+      context.setLineDash([6, 4]);
+      context.strokeRect(bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8);
+      context.restore();
+    }
+  });
+
+  context.restore();
+}
+
+function getTextOverlayBounds(overlay) {
+  previewContext.save();
+  const fontWeight = overlay.fontWeight || "400";
+  const fontStyle = overlay.fontStyle || "normal";
+  previewContext.font = `${fontStyle} ${fontWeight} ${Math.round(overlay.size)}px ${getOverlayFontFamily(overlay)}`;
+  previewContext.textBaseline = "top";
+  const metrics = previewContext.measureText(overlay.text);
+  previewContext.restore();
+
+  const width = Math.max(metrics.width, 1);
+  const height = Math.max(overlay.size * 1.1, 1);
+  const x = overlay.align === "center" ? overlay.x - width / 2 : overlay.x;
+
+  return { x, y: overlay.y, width, height };
+}
+
+function toggleTextProcessing() {
+  if (state.textProcessSession) {
+    pushAppHistory();
+    state.workingImageData = cloneImageData(state.textProcessSession.workingImageData);
+    state.customPalette = clonePaletteArray(state.textProcessSession.customPalette);
+    state.textOverlays = cloneTextOverlayArray(state.textProcessSession.textOverlays);
+    state.processedTextOverlays = [];
+    state.activeTextId = state.textProcessSession.activeTextId;
+    state.activeProcessedTextId = null;
+    state.activeProcessedTextSource = null;
+    state.hoveredTextId = state.textProcessSession.hoveredTextId;
+    state.dragText = null;
+    state.textProcessSession = null;
+    analyzeImage();
+    updateTextUi();
+    textStatus.textContent = "Processed text removed. You can edit it again.";
+    return;
+  }
+
+  if (!state.textOverlays.length) {
+    textStatus.textContent = "Add some text or emoji first.";
+    return;
+  }
+
+  pushAppHistory();
+  const processedImageData = renderCurrentOverlaysIntoWorkingImage();
+
+  if (!processedImageData) {
+    textStatus.textContent = "Text processing failed.";
+    return;
+  }
+
+  state.textProcessSession = createTextProcessSnapshot();
+  state.workingImageData = processedImageData;
+  state.processedTextOverlays = cloneTextOverlayArray(state.textOverlays);
+  state.textOverlays = [];
+  state.activeTextId = null;
+  state.activeProcessedTextId = state.processedTextOverlays[0]?.id || null;
+  state.activeProcessedTextSource = state.activeProcessedTextId ? "session" : null;
+  state.hoveredTextId = null;
+  state.dragText = null;
+  analyzeImage();
+  updateTextUi();
+  textStatus.textContent = "Text processed. Apply to lock it in, or Remove to edit again.";
+}
+
+function applyProcessedTextToImage() {
+  if (!state.textProcessSession) {
+    textStatus.textContent = "Process the text first.";
+    return;
+  }
+
+  pushAppHistory();
+  state.processedTextOverlays = cloneTextOverlayArray(state.textProcessSession.textOverlays);
+  state.textProcessSession = null;
+  state.activeTextId = null;
+  state.activeProcessedTextId = null;
+  state.activeProcessedTextSource = null;
+  state.hoveredTextId = null;
+  state.dragText = null;
+  updateTextUi();
+  textStatus.textContent = "Processed text applied permanently.";
+  requestPreviewRender();
+}
+
+function updateTextUi() {
+  const activeText = getActiveTextOverlay();
+  const activeProcessedOverlay =
+    state.activeProcessedTextSource === "session"
+      ? state.textProcessSession?.textOverlays?.find((overlay) => overlay.id === state.activeProcessedTextId) || null
+      : state.processedTextOverlays.find((overlay) => overlay.id === state.activeProcessedTextId) || null;
+
+  removeTextButton.disabled = !activeText && !activeProcessedOverlay;
+  processTextButton.disabled = !state.textOverlays.length && !state.textProcessSession;
+  applyTextProcessButton.disabled = !state.textProcessSession;
+  processTextButton.textContent = state.textProcessSession ? "Remove" : "Process";
+
+  renderTextLayerList();
+
+  if (!activeText && !activeProcessedOverlay) {
+    if (!state.textProcessSession) {
+      textStatus.textContent = "Add text or emoji, then drag it inside the preview.";
+    }
+    return;
+  }
+
+  if (!activeText && activeProcessedOverlay) {
+    textContentInput.value = activeProcessedOverlay.type === "emoji" ? "" : activeProcessedOverlay.text;
+    textSizeInput.value = String(Math.round(activeProcessedOverlay.size));
+    textStatus.textContent = "Processed layer selected. You can remove it from the image.";
+    return;
+  }
+
+  textContentInput.value = activeText.type === "emoji" ? "" : activeText.text;
+
+  if (activeText.type !== "emoji") {
+    textFontFamilyInput.value = activeText.fontFamily;
+    textColorInput.value = activeText.color;
+    if (textFontWeightInput) {
+      textFontWeightInput.value = activeText.fontWeight || "400";
+    }
+    if (textFontStyleInput) {
+      textFontStyleInput.value = activeText.fontStyle || "normal";
+    }
+  }
+
+  textSizeInput.value = String(Math.round(activeText.size));
+  textStatus.textContent =
+    activeText.type === "emoji"
+      ? "Emoji layer selected. Drag it inside the preview."
+      : "Text layer selected. Drag it inside the preview.";
+}
+
+function pushExistingAppSnapshot(snapshot) {
+  if (!snapshot) {
+    return;
+  }
+
+  state.appUndoStack.push(snapshot);
+
+  if (state.appUndoStack.length > MAX_APP_HISTORY) {
+    state.appUndoStack.shift();
+  }
+}
+
+function beginTextDrag(event, textId, point) {
+  if (state.interactionMode !== "move") {
+    return;
+  }
+
+  const overlay = state.textOverlays.find((item) => item.id === textId);
+
+  if (!overlay) {
+    return;
+  }
+
+  const bounds = getTextOverlayBounds(overlay);
+  state.activeTextId = textId;
+  state.hoveredTextId = textId;
+  state.dragText = {
+    active: true,
+    id: textId,
+    offsetX: point.x - bounds.x,
+    offsetY: point.y - bounds.y,
+    startX: overlay.x,
+    startY: overlay.y,
+    historySnapshot: createAppSnapshot({ full: false }),
+    moved: false
+  };
+  previewCanvas.style.cursor = "move";
+  updateTextUi();
+  requestPreviewRender();
+  event.preventDefault();
+}
+
+function updateTextDrag(event) {
+  const overlay = getActiveTextOverlay();
+
+  if (!overlay || !state.dragText?.active) {
+    return;
+  }
+
+  const point = getCanvasPointFromEvent(event);
+  const bounds = getTextOverlayBounds(overlay);
+  const nextX = point.x - state.dragText.offsetX;
+  const nextY = point.y - state.dragText.offsetY;
+  const halfWidth = bounds.width / 2;
+
+  overlay.x =
+    overlay.align === "center"
+      ? clampNumber(nextX + halfWidth, halfWidth, Math.max(previewCanvas.width - halfWidth, halfWidth))
+      : clampNumber(nextX, 0, Math.max(previewCanvas.width - bounds.width, 0));
+  overlay.y = clampNumber(nextY, 0, Math.max(previewCanvas.height - bounds.height, 0));
+  state.dragText.moved =
+    state.dragText.moved ||
+    Math.abs(overlay.x - state.dragText.startX) > 0.5 ||
+    Math.abs(overlay.y - state.dragText.startY) > 0.5;
+  textStatus.textContent = overlay.type === "emoji" ? "Dragging emoji layer." : "Dragging text layer.";
+  requestPreviewRender();
+}
+
+function endTextDrag(event) {
+  if (!state.dragText?.active) {
+    return;
+  }
+
+  updateTextDrag(event);
+  const dragState = state.dragText;
+
+  if (dragState.moved) {
+    pushExistingAppSnapshot(dragState.historySnapshot);
+  }
+
+  state.dragText = null;
+  previewCanvas.style.cursor = state.interactionMode === "move" ? "grab" : "crosshair";
+  textStatus.textContent = "Layer moved.";
+  requestPreviewRender();
+}
+
+function beginImageDrag(event, point) {
+  if (state.interactionMode !== "move" || !state.image) {
+    return;
+  }
+
+  state.dragImage = {
+    active: true,
+    startX: point.x,
+    startY: point.y,
+    startOffsetX: state.imageOffsetX,
+    startOffsetY: state.imageOffsetY,
+    historySnapshot: createAppSnapshot({ full: false }),
+    moved: false
+  };
+  previewCanvas.style.cursor = "grabbing";
+  hoverInfo.textContent = "Dragging image inside the frame.";
+  event.preventDefault();
+}
+
+function updateImageDrag(event) {
+  if (!state.dragImage?.active || !state.image) {
+    return;
+  }
+
+  const point = getCanvasPointFromEvent(event);
+  state.imageOffsetX = state.dragImage.startOffsetX + (point.x - state.dragImage.startX);
+  state.imageOffsetY = state.dragImage.startOffsetY + (point.y - state.dragImage.startY);
+  constrainImageOffsets();
+  state.dragImage.moved =
+    state.dragImage.moved ||
+    Math.abs(state.imageOffsetX - state.dragImage.startOffsetX) > 0.5 ||
+    Math.abs(state.imageOffsetY - state.dragImage.startOffsetY) > 0.5;
+  requestPreviewRender();
+}
+
+function endImageDrag(event) {
+  if (!state.dragImage?.active) {
+    return;
+  }
+
+  updateImageDrag(event);
+  const dragState = state.dragImage;
+
+  if (dragState.moved) {
+    pushExistingAppSnapshot(dragState.historySnapshot);
+  }
+
+  state.dragImage = null;
+  previewCanvas.style.cursor = "grab";
+  hoverInfo.textContent = "Image moved.";
+  requestPreviewRender();
+}
+
+function setInteractionMode(mode) {
+  state.interactionMode = mode;
+  state.hoveredTileIndex = -1;
+  state.hoveredTextId = null;
+
+  if (mode === "move") {
+    setSelectionPreviewVisibility(false);
+  }
+
+  updateInteractionModeUi();
+  updateHoverInfo();
+  requestPreviewRender();
+}
+
+function updateInteractionModeUi() {
+  modeSelectButton.classList.toggle("is-active", state.interactionMode === "select");
+  modeMoveButton.classList.toggle("is-active", state.interactionMode === "move");
+  previewCanvas.style.cursor = state.interactionMode === "move" ? "grab" : "crosshair";
+}
+
+function updateHoverInfo() {
+  if (state.dragImage?.active) {
+    hoverInfo.textContent = "Dragging image inside the frame.";
+    return;
+  }
+
+  if (state.dragText?.active) {
+    hoverInfo.textContent = "Dragging text or emoji inside the frame.";
+    return;
+  }
+
+  if (state.dragSelection?.active && state.dragSelection.moved) {
+    const rect = getNormalizedRect(
+      state.dragSelection.startX,
+      state.dragSelection.startY,
+      state.dragSelection.currentX,
+      state.dragSelection.currentY
+    );
+    const areaTileCount = getTileIndicesInRect(rect).length;
+    hoverInfo.textContent = `Scanning area. ${formatCount(areaTileCount)} tiles are inside the current box.`;
+    return;
+  }
+
+  const explicitSelectionCount = state.selectedTileIndices.size;
+  const paletteColor = state.palette[state.activeColorIndex];
+  const previewSelectionSet = getPreviewSelectionSet();
+
+  if (state.interactionMode === "move") {
+    if (state.hoveredTextId) {
+      const activeText = state.textOverlays.find((overlay) => overlay.id === state.hoveredTextId);
+
+      if (activeText) {
+        hoverInfo.textContent = `"${activeText.text}" selected. Drag it anywhere inside the frame.`;
+        return;
+      }
+    }
+
+    hoverInfo.textContent = "Transform mode is active. Drag the image, text, or emoji inside the frame.";
+    return;
+  }
+
+  if (state.hoveredTextId) {
+    const activeText = state.textOverlays.find((overlay) => overlay.id === state.hoveredTextId);
+
+    if (activeText) {
+      hoverInfo.textContent = `"${activeText.text}" selected. Switch to Transform mode to move it.`;
+      return;
+    }
+  }
+
+  if (state.hoveredTileIndex >= 0) {
+    const hoveredTile = state.mosaicTiles[state.hoveredTileIndex];
+    const paintBounds = getPaintBounds(hoveredTile);
+    const hoveredHex = rgbToHex(hoveredTile.color.r, hoveredTile.color.g, hoveredTile.color.b);
+    const matches = previewSelectionSet.has(state.hoveredTileIndex);
+
+    if (state.selectionReferenceColor) {
+      const referenceDistance = getColorDistance(hoveredTile.color, state.selectionReferenceColor);
+      hoverInfo.textContent =
+        `${hoveredHex} tile. ${Math.round(paintBounds.width)} x ${Math.round(paintBounds.height)} px. ` +
+        `Distance ${referenceDistance.toFixed(1)} / ${thresholdInput.value}. ` +
+        `${matches ? "Included in selection." : "Outside selection."}`;
+      return;
+    }
+
+    if (paletteColor) {
+      const hoveredDistance = getColorDistance(hoveredTile.color, paletteColor);
+      hoverInfo.textContent =
+        `${paletteColor.hex} active. Hover tile ${hoveredHex}. ` +
+        `${Math.round(paintBounds.width)} x ${Math.round(paintBounds.height)} px. ` +
+        `Distance ${hoveredDistance.toFixed(1)} / ${thresholdInput.value}. ` +
+        `${matches ? "Included in selection." : "Outside selection."}`;
+      return;
+    }
+
+    hoverInfo.textContent = `${hoveredHex} tile. Click to select, Shift to add, or drag to scan an area.`;
+    return;
+  }
+
+  if (explicitSelectionCount) {
+    const referenceHex = state.selectionReferenceColor
+      ? rgbToHex(
+          state.selectionReferenceColor.r,
+          state.selectionReferenceColor.g,
+          state.selectionReferenceColor.b
+        )
+      : "none";
+    hoverInfo.textContent =
+      `${formatCount(explicitSelectionCount)} tiles selected. Reference ${referenceHex}. ` +
+      `Preview ${state.showSelectionPreview ? "on" : "off"}.`;
+    return;
+  }
+
+  if (paletteColor) {
+    hoverInfo.textContent =
+      `${paletteColor.hex} active. ${formatCount(state.renderCache.selectedTiles)} matching tiles. ` +
+      `Preview ${state.showSelectionPreview ? "on" : "off"}.`;
+    return;
+  }
+
+  hoverInfo.textContent = "Selection mode is active. Click or drag on the mosaic to build a selection.";
+}
+
+function updateTextUi() {
+  const activeText = getActiveTextOverlay();
+  const activeProcessedOverlay =
+    state.activeProcessedTextSource === "session"
+      ? state.textProcessSession?.textOverlays?.find((overlay) => overlay.id === state.activeProcessedTextId) || null
+      : state.processedTextOverlays.find((overlay) => overlay.id === state.activeProcessedTextId) || null;
+
+  removeTextButton.disabled = !activeText && !activeProcessedOverlay;
+  processTextButton.disabled = !state.textOverlays.length && !state.textProcessSession;
+  applyTextProcessButton.disabled = !state.textProcessSession;
+  processTextButton.textContent = state.textProcessSession ? "Remove" : "Process";
+
+  renderTextLayerList();
+
+  if (!activeText && !activeProcessedOverlay) {
+    if (!state.textProcessSession) {
+      textStatus.textContent = "Add text or emoji, then switch to Transform mode to position it.";
+    }
+    return;
+  }
+
+  if (!activeText && activeProcessedOverlay) {
+    textContentInput.value = activeProcessedOverlay.type === "emoji" ? "" : activeProcessedOverlay.text;
+    textSizeInput.value = String(Math.round(activeProcessedOverlay.size));
+    textStatus.textContent = "Processed layer selected. Remove it if you want to edit again.";
+    return;
+  }
+
+  textContentInput.value = activeText.type === "emoji" ? "" : activeText.text;
+
+  if (activeText.type !== "emoji") {
+    textFontFamilyInput.value = activeText.fontFamily;
+    textColorInput.value = activeText.color;
+    if (textFontWeightInput) {
+      textFontWeightInput.value = activeText.fontWeight || "400";
+    }
+    if (textFontStyleInput) {
+      textFontStyleInput.value = activeText.fontStyle || "normal";
+    }
+  }
+
+  textSizeInput.value = String(Math.round(activeText.size));
+  textStatus.textContent =
+    activeText.type === "emoji"
+      ? "Emoji layer selected. Switch to Transform mode to move it."
+      : "Text layer selected. Switch to Transform mode to move it.";
+}
+
+applyTileTextFillButton?.addEventListener("click", () => {
+  if (!state.mosaicTiles.length) {
+    paletteSummary.textContent = "Analyze the image before filling tiles.";
+    return;
+  }
+
+  applyTileContentFill("text");
+});
+
+applyTileEmojiFillButton?.addEventListener("click", () => {
+  if (!state.mosaicTiles.length) {
+    paletteSummary.textContent = "Analyze the image before filling tiles.";
+    return;
+  }
+
+  applyTileContentFill("emoji");
+});

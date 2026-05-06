@@ -1,9 +1,15 @@
-<!DOCTYPE html>
-<html lang="tr">
+﻿<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pixelmaxxxing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&family=Oswald:wght@400;500&family=DM+Sans:wght@400;500&family=Playfair+Display:wght@400;600&family=Caveat:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -11,12 +17,16 @@
       <section class="control-panel">
         <div class="section-title top-title">
           <div class="title-copy">
-            <h2 id="app-title">Hazırlanıyor...</h2>
+            <h2 id="app-title">Loading...</h2>
           </div>
           <div class="title-tools">
             <div class="title-upload">
-              <label for="image-input">Görsel Seç</label>
-              <input id="image-input" type="file" accept="image/*" />
+              <label for="image-input">Choose Image</label>
+              <div class="custom-file-picker">
+                <button id="choose-image-button" class="secondary-button" type="button">Choose Image</button>
+                <span id="chosen-image-name" class="file-name-label">No file selected</span>
+              </div>
+              <input id="image-input" class="visually-hidden" type="file" accept="image/*" />
             </div>
           </div>
         </div>
@@ -24,55 +34,55 @@
         <div class="control-grid">
           <div class="control-card mosaic-card">
             <div class="card-heading compact-heading">
-              <h3>Mozaik</h3>
+              <h3>Mosaic</h3>
             </div>
 
             <div class="grid-inputs triple dense-grid">
               <div class="control-group compact">
-                <label for="mosaic-columns">Sütun</label>
-                <input id="mosaic-columns" type="number" value="48" />
+                <label for="mosaic-columns">Columns</label>
+                <input id="mosaic-columns" type="number" value="175" />
               </div>
 
               <div class="control-group compact">
-                <label for="mosaic-rows">Satır</label>
-                <input id="mosaic-rows" type="number" value="48" />
+                <label for="mosaic-rows">Rows</label>
+                <input id="mosaic-rows" type="number" value="175" />
               </div>
 
               <div class="control-group compact">
-                <label for="palette-count">Renk kutusu</label>
+                <label for="palette-count">Color Slots</label>
                 <input id="palette-count" type="number" min="3" max="16" value="8" />
               </div>
 
               <div class="control-group compact">
-                <label for="mosaic-tile-width">Parça eni (px)</label>
+                <label for="mosaic-tile-width">Tile Width (px)</label>
                 <input id="mosaic-tile-width" type="number" min="2" value="20" />
               </div>
 
               <div class="control-group compact">
-                <label for="mosaic-tile-height">Parça boyu (px)</label>
+                <label for="mosaic-tile-height">Tile Height (px)</label>
                 <input id="mosaic-tile-height" type="number" min="2" value="20" />
               </div>
 
               <div class="control-group compact">
-                <label for="mosaic-shape">Parça şekli</label>
+                <label for="mosaic-shape">Tile Shape</label>
                 <select id="mosaic-shape">
-                  <option value="square">Kare</option>
-                  <option value="round">Yuvarlak</option>
+                  <option value="square">Square</option>
+                  <option value="round">Round</option>
                 </select>
               </div>
 
               <div class="control-group compact">
-                <label for="mosaic-gap-x">Sağ-sol aralığı (px)</label>
+                <label for="mosaic-gap-x">Horizontal Gap (px)</label>
                 <input id="mosaic-gap-x" type="number" min="0" value="0" />
               </div>
 
               <div class="control-group compact">
-                <label for="mosaic-gap-y">Yukarı-aşağı aralığı (px)</label>
+                <label for="mosaic-gap-y">Vertical Gap (px)</label>
                 <input id="mosaic-gap-y" type="number" min="0" value="0" />
               </div>
 
               <div class="control-group compact blur-group">
-                <label for="mosaic-blur">Gauss blur</label>
+                <label for="mosaic-blur">Gaussian Blur</label>
                 <input id="mosaic-blur" type="range" min="0" max="24" value="0" />
                 <p class="hint"><span id="mosaic-blur-value">0</span> px</p>
               </div>
@@ -80,32 +90,35 @@
 
             <div class="button-row compact duo compact-actions">
               <button id="reset-mosaic-button" class="secondary-button" type="button">
-                Mozaiği Sıfırla
+                Reset Mosaic
               </button>
             </div>
           </div>
 
           <div class="control-card selection-card">
             <div class="card-heading compact-heading">
-              <h3>Seçim</h3>
+              <h3>Selection</h3>
             </div>
 
             <div class="control-group compact">
-              <label for="threshold">Renk yakınlığı</label>
+              <label for="threshold">Color Similarity</label>
               <input id="threshold" type="range" min="0" max="220" value="36" />
-              <p class="hint"><span id="threshold-value">36</span> puan</p>
+              <p class="hint"><span id="threshold-value">36</span> points</p>
             </div>
 
             <p id="selection-status" class="selection-status">
-              Henüz mozaik seçimi yok. Tek tıkla bir parça seç, Shift ile çoklu seç veya sürükleyerek alan tara.
+              No mosaic selection yet. Click one tile, use Shift for multi-select, or drag to scan an area.
             </p>
 
             <div class="button-row compact selection-actions">
-              <button id="select-similar-button" class="is-hidden" type="button">
-                Benzerlerini Seç
+              <button id="select-similar-button" type="button">
+                Select Similar
+              </button>
+              <button id="invert-selection-button" class="secondary-button" type="button">
+                Invert Selection
               </button>
               <button id="clear-selection-button" class="secondary-button" type="button">
-                Seçimi Temizle
+                Clear Selection
               </button>
             </div>
 
@@ -116,50 +129,203 @@
               tabindex="-1"
               aria-hidden="true"
             >
-              Mozaiği Analiz Et
+              Analyze Mosaic
             </button>
           </div>
 
           <div class="control-card palette-card wide-card">
             <div class="palette-header compact-heading">
               <div>
-                <label>Bulunan renkler</label>
-                <p id="palette-summary" class="hint">
-                  Önce bir görsel seçip analiz et.
-                </p>
+                <label>Detected Colors</label>
+                <p id="palette-summary" class="hint">Choose an image to begin.</p>
               </div>
-              <div id="mosaic-summary" class="summary-pill" aria-hidden="true">Mozaik hazır değil</div>
+              <div id="mosaic-summary" class="summary-pill" aria-hidden="true">Mosaic not ready</div>
             </div>
             <div id="palette-list" class="palette-list"></div>
             <div class="palette-replace">
-              <label for="replacement-color">Yeni renk</label>
+              <label for="replacement-color">New Color</label>
               <div class="replace-row">
+                <div id="apply-replace-label" class="replace-text">Replace Selection</div>
                 <input id="replacement-color" type="color" value="#FF6B35" />
-                <button id="apply-replace-button" type="button">Seçileni Değiştir</button>
+                <button id="confirm-replace-button" type="button">Apply</button>
               </div>
+              <div class="tile-fill-grid">
+                <div class="control-group compact">
+                  <label for="tile-fill-text">Fill With Letter</label>
+                  <input id="tile-fill-text" type="text" placeholder="Type any text" />
+                </div>
+                <div class="control-group compact">
+                  <label for="tile-fill-font-family">Letter Font</label>
+                  <select id="tile-fill-font-family">
+                    <option value="'Space Mono', monospace">"Space Mono"</option>
+                    <option value="Helvetica, Arial, sans-serif">Helvetica</option>
+                  </select>
+                </div>
+                <div class="control-group compact">
+                  <label for="tile-fill-emoji">Fill With Emoji</label>
+                  <select id="tile-fill-emoji">
+                    <option value="😀">😀</option>
+                    <option value="🔥">🔥</option>
+                    <option value="✨">✨</option>
+                    <option value="❤️">❤️</option>
+                    <option value="⭐">⭐</option>
+                    <option value="🎨">🎨</option>
+                    <option value="💎">💎</option>
+                    <option value="👀">👀</option>
+                  </select>
+                </div>
+                <div class="control-group compact">
+                  <label for="tile-fill-color">Fill Color</label>
+                  <input id="tile-fill-color" type="color" value="#FF6B35" />
+                </div>
+              </div>
+              <label class="checkbox-row tile-fill-checkbox">
+                <input id="tile-fill-remove-bg" type="checkbox" />
+                <span>Remove Tile Background</span>
+              </label>
+              <div class="button-row compact tile-fill-upload-row">
+                <button id="add-tile-fill-font-button" class="secondary-button" type="button">Upload Fill Font</button>
+                <input
+                  id="tile-fill-custom-font-input"
+                  class="visually-hidden"
+                  type="file"
+                  accept=".ttf,.otf,.woff,.woff2"
+                />
+              </div>
+              <div class="button-row compact tile-fill-actions">
+                <button id="apply-tile-text-fill-button" class="secondary-button" type="button">Fill Text</button>
+                <button id="apply-tile-emoji-fill-button" class="secondary-button" type="button">Fill Emoji</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-card text-card">
+            <div class="card-heading compact-heading">
+              <h3>Text</h3>
+            </div>
+
+            <div class="text-layout">
+              <div class="text-main">
+                <div class="control-group compact text-input-group">
+                  <label for="text-content">Content</label>
+                  <input id="text-content" type="text" placeholder="Type your text" />
+                </div>
+
+                <div class="control-group compact text-font-inline">
+                  <label for="text-font-family">Font</label>
+                  <select id="text-font-family">
+                    <option value="'Space Mono', monospace">Space Mono</option>
+                    <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+                    <option value="'DM Sans', sans-serif">DM Sans</option>
+                    <option value="'Oswald', sans-serif">Oswald</option>
+                    <option value="'Bebas Neue', sans-serif">Bebas Neue</option>
+                    <option value="'Playfair Display', serif">Playfair Display</option>
+                    <option value="'Caveat', cursive">Caveat</option>
+                  </select>
+                </div>
+
+                <div class="text-settings-grid">
+                  <div class="control-group compact">
+                    <label for="text-size">Size (px)</label>
+                    <input id="text-size" type="number" min="8" max="320" value="72" />
+                  </div>
+
+                  <div class="control-group compact">
+                    <label for="text-color">Color</label>
+                    <input id="text-color" type="color" value="#111111" />
+                  </div>
+
+                  <div class="control-group compact">
+                    <label for="text-font-weight">Weight</label>
+                    <select id="text-font-weight">
+                      <option value="100">Thin</option>
+                      <option value="300">Light</option>
+                      <option value="400" selected>Normal</option>
+                      <option value="700">Bold</option>
+                    </select>
+                  </div>
+
+                  <div class="control-group compact">
+                    <label for="text-font-style">Style</label>
+                    <select id="text-font-style">
+                      <option value="normal" selected>Normal</option>
+                      <option value="italic">Italic</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div id="text-layer-list" class="text-layer-list" aria-label="Text layers">
+                  <p class="text-layer-empty">No text or emoji layers yet.</p>
+                </div>
+
+                <div class="button-row compact text-font-actions">
+                  <button id="add-custom-font-button" class="secondary-button" type="button">Upload Custom Font</button>
+                  <input
+                    id="custom-font-input"
+                    class="visually-hidden"
+                    type="file"
+                    accept=".ttf,.otf,.woff,.woff2"
+                  />
+                </div>
+
+                <div class="grid-inputs duo-grid dense-grid emoji-row">
+                  <div class="control-group compact">
+                    <label for="emoji-picker">Emoji</label>
+                    <div class="emoji-picker-shell">
+                      <div id="emoji-category-tabs" class="emoji-category-tabs" aria-label="Emoji categories"></div>
+                      <div id="emoji-grid" class="emoji-grid" aria-label="Emoji picker"></div>
+                      <select id="emoji-picker" class="visually-hidden"></select>
+                    </div>
+                  </div>
+
+                  <div class="control-group compact emoji-action-group">
+                    <label>&nbsp;</label>
+                    <div class="emoji-action-buttons">
+                      <button id="insert-emoji-into-text-button" class="secondary-button" type="button">
+                        Insert Into Text
+                      </button>
+                      <button id="add-emoji-button" type="button">Add Separate</button>
+                    </div>
+                  </div>
+                </div>
+
+                <p id="text-status" class="selection-status">
+                  After adding text, switch to Transform mode to position it.
+                </p>
+              </div>
+
+              <aside class="text-side">
+                <div class="text-toolbar-stack">
+                  <button id="add-text-button" type="button">Add Text</button>
+                  <button id="process-text-button" class="secondary-button" type="button">Process</button>
+                  <button id="remove-text-button" class="secondary-button" type="button">Remove</button>
+                  <button id="apply-text-process-button" type="button">Apply</button>
+                  <button id="delete-text-button" class="secondary-button" type="button">Delete Text</button>
+                </div>
+              </aside>
             </div>
           </div>
 
           <div class="control-card action-card">
             <div class="card-heading compact-heading">
-              <h3>Piksel öteleme</h3>
+              <h3>Pixel Shift</h3>
             </div>
 
             <div class="action-layout">
               <div class="action-block">
                 <div class="grid-inputs secondary-grid duo-grid action-grid">
                   <div class="control-group compact">
-                    <label for="datamosh-direction">Öteleme yönü</label>
+                    <label for="datamosh-direction">Shift Direction</label>
                     <select id="datamosh-direction">
-                      <option value="right">Sağa</option>
-                      <option value="left">Sola</option>
-                      <option value="down">Aşağı</option>
-                      <option value="up">Yukarı</option>
+                      <option value="right">Right</option>
+                      <option value="left">Left</option>
+                      <option value="down">Down</option>
+                      <option value="up">Up</option>
                     </select>
                   </div>
 
                   <div class="control-group compact">
-                    <label for="datamosh-amount">Adım sayısı</label>
+                    <label for="datamosh-amount">Step Count</label>
                     <input id="datamosh-amount" type="number" min="1" value="3" />
                   </div>
                 </div>
@@ -167,9 +333,9 @@
             </div>
 
             <div class="double-actions action-bottom">
-              <button id="apply-datamosh-button" type="button">Piksel ötelemeyi uygula</button>
+              <button id="apply-datamosh-button" type="button">Apply Pixel Shift</button>
               <button id="reset-button" class="secondary-button" type="button">
-                Resmi Sıfırla
+                Reset Image
               </button>
             </div>
           </div>
@@ -178,57 +344,68 @@
 
       <section class="preview-panel">
         <div class="preview-topbar">
-          <p id="image-size-info" class="hint image-size-info">Görsel yok</p>
+          <div class="preview-topbar-left">
+            <div class="mode-actions preview-mode-actions" aria-label="Working mode">
+              <button id="mode-select-button" class="secondary-button mini-toggle is-active" type="button">
+                Selection
+              </button>
+              <button id="mode-move-button" class="secondary-button mini-toggle" type="button">
+                Transform
+              </button>
+            </div>
 
-          <div class="zoom-controls">
-            <button id="zoom-out-button" class="secondary-button small-button" type="button">-</button>
-            <span id="zoom-value" class="zoom-value">100%</span>
-            <button id="zoom-in-button" class="secondary-button small-button" type="button">+</button>
-            <button id="zoom-reset-button" class="secondary-button small-button" type="button">Sıfırla</button>
+            <p id="image-size-info" class="hint image-size-info">No image loaded</p>
+
+            <div class="zoom-controls">
+              <button id="zoom-out-button" class="secondary-button small-button" type="button">-</button>
+              <span id="zoom-value" class="zoom-value">100%</span>
+              <button id="zoom-in-button" class="secondary-button small-button" type="button">+</button>
+              <button id="zoom-reset-button" class="secondary-button small-button" type="button">Reset</button>
+            </div>
           </div>
 
-          <p id="hover-info" class="hint preview-status">
-            Seçim için mozaiğe tıkla ya da sürükle.
-          </p>
-
-          <div class="preview-toggle-group" aria-label="Seçim önizleme modu">
-            <span class="preview-toggle-label">Seçim önizleme</span>
+          <div class="preview-toggle-group" aria-label="Color selection preview mode">
+            <span class="preview-toggle-label">Color Selection Preview</span>
             <div class="toggle-buttons">
               <button
                 id="selection-preview-on-button"
                 class="toggle-button is-active"
                 type="button"
               >
-                Açık
+                On
               </button>
               <button
                 id="selection-preview-off-button"
                 class="toggle-button"
                 type="button"
               >
-                Kapalı
+                Off
               </button>
             </div>
           </div>
         </div>
+
+        <p id="hover-info" class="hint preview-status">
+          Click or drag on the mosaic to make a selection.
+        </p>
 
         <div class="canvas-frame">
           <div id="preview-stage" class="preview-stage">
             <canvas id="preview-canvas"></canvas>
           </div>
           <p id="empty-state" class="empty-state">
-            Görsel seçildiğinde burada mozaik ve seçim önizlemesi görünecek.
+            The mosaic preview and selection overlay will appear here after you load an image.
           </p>
         </div>
 
         <div class="canvas-actions">
-          <div class="canvas-background-controls" aria-label="Canvas arkaplanı">
+          <div class="canvas-background-controls" aria-label="Canvas background">
             <button
               id="bg-transparent-button"
               class="background-swatch is-active"
               type="button"
-              aria-label="Transparan arkaplan"
-              title="Transparan"
+              aria-label="Transparent background"
+              title="Transparent"
             >
               <span class="background-swatch-fill background-transparent"></span>
             </button>
@@ -236,8 +413,8 @@
               id="bg-white-button"
               class="background-swatch"
               type="button"
-              aria-label="Beyaz arkaplan"
-              title="Beyaz"
+              aria-label="White background"
+              title="White"
             >
               <span class="background-swatch-fill background-white"></span>
             </button>
@@ -245,8 +422,8 @@
               id="bg-black-button"
               class="background-swatch"
               type="button"
-              aria-label="Siyah arkaplan"
-              title="Siyah"
+              aria-label="Black background"
+              title="Black"
             >
               <span class="background-swatch-fill background-black"></span>
             </button>
@@ -254,19 +431,44 @@
               id="bg-custom-button"
               class="background-swatch"
               type="button"
-              aria-label="Özel arkaplan rengi"
-              title="Özel renk"
+              aria-label="Custom background color"
+              title="Custom"
             >
               <span class="background-swatch-fill background-rainbow"></span>
             </button>
             <input id="bg-custom-color" type="color" value="#ff6b35" class="visually-hidden" />
           </div>
 
-          <button id="export-svg-button" class="overlay-primary-button" type="button">
-            SVG olarak çıktısını al
-          </button>
+          <div class="export-actions">
+            <span class="toolbar-label">Export:</span>
+            <button id="export-svg-button" class="overlay-primary-button compact-export-button" type="button">
+              SVG
+            </button>
+            <button id="export-png-button" class="overlay-primary-button compact-export-button" type="button">
+              PNG
+            </button>
+            <button id="export-jpg-button" class="overlay-primary-button compact-export-button" type="button">
+              JPG
+            </button>
+          </div>
+
+          <div class="frame-actions" aria-label="Frame options">
+            <button id="frame-none-button" class="secondary-button frame-button is-active" type="button">
+              None
+            </button>
+            <button id="frame-square-button" class="secondary-button frame-button" type="button">
+              Square
+            </button>
+            <button id="frame-landscape-button" class="secondary-button frame-button" type="button">
+              16:9
+            </button>
+            <button id="frame-portrait-button" class="secondary-button frame-button" type="button">
+              9:16
+            </button>
+          </div>
+
           <button id="refresh-preview-button" class="secondary-button overlay-button" type="button">
-            Yenile
+            Refresh
           </button>
         </div>
       </section>

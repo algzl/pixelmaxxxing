@@ -1,0 +1,28 @@
+pixelmaxxxing web surumu icin yuklenecek dosyalar:
+
+- index.html
+- style.css
+- renderer.js
+- assets/ klasoru
+
+Onerilen klasor yolu:
+
+/public_html/pixelmaxxxing/
+
+Bu durumda sayfa adresi genelde soyle olur:
+
+https://senin-domainin.com/pixelmaxxxing/
+
+WordPress + Elementor entegrasyonu icin:
+
+1. Elementor'da yeni bir sayfa ac.
+2. Buton veya metin linki ile /pixelmaxxxing/ adresine yonlendir.
+3. Istersen HTML widget ile iframe kullan:
+
+<iframe src="/pixelmaxxxing/" style="width:100%;height:100vh;border:0;"></iframe>
+
+Not:
+
+- Electron dosyalari web surumune gerekmez.
+- package.json, main.js ve preload.js yuklenmek zorunda degil.
+- Browser surumu icin bu klasordeki dosyalar yeterlidir.
