@@ -79,6 +79,26 @@ body {
 .control-panel {
   gap: 10px;
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #111111 transparent;
+}
+
+.control-panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+  background: #111111;
+  border-radius: 0;
+  border: 0;
+}
+
+.control-panel::-webkit-scrollbar-thumb:hover {
+  background: #222222;
 }
 
 .top-title {
@@ -701,9 +721,9 @@ button {
 }
 
 .preview-status {
-  margin: 0 0 10px;
+  margin: 0 0 4px;
   min-width: 0;
-  min-height: 18px;
+  min-height: 0;
   text-align: left;
   font-size: 0.82rem;
   line-height: 1.35;
@@ -767,7 +787,7 @@ button {
   position: relative;
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 0;
   height: calc(100vh - 232px);
@@ -776,8 +796,8 @@ button {
   border-radius: 0;
   border: 1px solid var(--line);
   background: #ffffff;
-  overflow: auto;
-  padding: 14px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .canvas-frame[data-bg-mode="white"] {
@@ -818,6 +838,25 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #111111;
+}
+
+.action-checkbox {
+  margin-top: 10px;
 }
 
 .frame-actions {
@@ -923,7 +962,7 @@ button {
   flex: 0 0 auto;
   min-width: 0;
   min-height: 0;
-  margin: auto;
+  margin: 0 auto;
   overflow: hidden;
   border: 1px solid var(--line);
   background:

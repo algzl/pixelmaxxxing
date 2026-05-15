@@ -23,6 +23,7 @@ const exportPngButton = document.getElementById("export-png-button");
 const exportJpgButton = document.getElementById("export-jpg-button");
 const datamoshDirectionInput = document.getElementById("datamosh-direction");
 const datamoshAmountInput = document.getElementById("datamosh-amount");
+const datamoshOverflowInput = document.getElementById("datamosh-overflow");
 const applyDatamoshButton = document.getElementById("apply-datamosh-button");
 const paletteList = document.getElementById("palette-list");
 const paletteSummary = document.getElementById("palette-summary");
@@ -65,7 +66,6 @@ const zoomResetButton = document.getElementById("zoom-reset-button");
 const zoomValue = document.getElementById("zoom-value");
 const selectionPreviewOnButton = document.getElementById("selection-preview-on-button");
 const selectionPreviewOffButton = document.getElementById("selection-preview-off-button");
-const refreshPreviewButton = document.getElementById("refresh-preview-button");
 const bgTransparentButton = document.getElementById("bg-transparent-button");
 const bgWhiteButton = document.getElementById("bg-white-button");
 const bgBlackButton = document.getElementById("bg-black-button");
@@ -77,7 +77,10 @@ const frameNoneButton = document.getElementById("frame-none-button");
 const frameSquareButton = document.getElementById("frame-square-button");
 const frameLandscapeButton = document.getElementById("frame-landscape-button");
 const framePortraitButton = document.getElementById("frame-portrait-button");
+const previewPanel = document.querySelector(".preview-panel");
+const previewTopbar = document.querySelector(".preview-topbar");
 const canvasFrame = document.querySelector(".canvas-frame");
+const canvasActions = document.querySelector(".canvas-actions");
 const previewStage = document.getElementById("preview-stage");
 const previewCanvas = document.getElementById("preview-canvas");
 const emptyState = document.getElementById("empty-state");
@@ -476,13 +479,6 @@ selectionPreviewOffButton.addEventListener("click", () => {
   setSelectionPreviewVisibility(false);
 });
 
-refreshPreviewButton.addEventListener("click", () => {
-  pushSelectionHistory();
-  refreshPreviewCanvas({
-    summaryMessage: "Preview refreshed. Selection outlines are hidden."
-  });
-});
-
 bgTransparentButton.addEventListener("click", () => {
   setPreviewBackgroundMode("transparent");
 });
@@ -811,6 +807,7 @@ window.addEventListener("resize", () => {
 
   clearTimeout(state.resizeTimer);
   state.resizeTimer = window.setTimeout(() => {
+    updateCanvasFrameLayout();
     fitCanvasToFrame({ preserveManualZoom: true });
   }, 60);
 });
@@ -1108,7 +1105,7 @@ function resolveFrameDimensions() {
   }
 
   if (state.framePreset === "landscape") {
-    const width = Math.max(imageWidth, Math.round(imageHeight * (16 / 9)));
+    const width = Math.min(imageWidth, Math.round(imageHeight * (16 / 9)));
     return {
       width,
       height: Math.max(1, Math.round(width * (9 / 16)))
@@ -1116,14 +1113,14 @@ function resolveFrameDimensions() {
   }
 
   if (state.framePreset === "portrait") {
-    const height = Math.max(imageHeight, Math.round(imageWidth * (16 / 9)));
+    const height = Math.min(imageHeight, Math.round(imageWidth * (16 / 9)));
     return {
       width: Math.max(1, Math.round(height * (9 / 16))),
       height
     };
   }
 
-  const side = Math.max(imageWidth, imageHeight);
+  const side = Math.min(imageWidth, imageHeight);
   return {
     width: side,
     height: side
@@ -1132,6 +1129,26 @@ function resolveFrameDimensions() {
 
 function hasActiveFramePreset() {
   return state.framePreset !== "none";
+}
+
+function getFrameAspectRatioValue() {
+  if (state.framePreset === "square") {
+    return 1;
+  }
+
+  if (state.framePreset === "landscape") {
+    return 16 / 9;
+  }
+
+  if (state.framePreset === "portrait") {
+    return 9 / 16;
+  }
+
+  if (!state.image) {
+    return 1;
+  }
+
+  return state.image.width / state.image.height;
 }
 
 function getRenderedImageWidth() {
@@ -1156,12 +1173,6 @@ function centerImageInFrame() {
     return;
   }
 
-  if (!hasActiveFramePreset()) {
-    state.imageOffsetX = 0;
-    state.imageOffsetY = 0;
-    return;
-  }
-
   state.imageOffsetX = Math.round((state.frameWidth - getRenderedImageWidth()) / 2);
   state.imageOffsetY = Math.round((state.frameHeight - getRenderedImageHeight()) / 2);
   constrainImageOffsets();
@@ -1178,12 +1189,6 @@ function getImageBoundsInFrame() {
 
 function constrainImageOffsets() {
   if (!state.image) {
-    return;
-  }
-
-  if (!hasActiveFramePreset()) {
-    state.imageOffsetX = 0;
-    state.imageOffsetY = 0;
     return;
   }
 
@@ -1224,11 +1229,9 @@ function prepareCanvas() {
   emptyState.style.display = "none";
   state.renderCache.canvas.width = state.image.width;
   state.renderCache.canvas.height = state.image.height;
-  centerImageInFrame();
   invalidateRenderCache();
-  window.requestAnimationFrame(() => {
-    fitCanvasToFrame();
-  });
+  updateCanvasFrameLayout();
+  fitCanvasToFrame();
 }
 
 function drawLoadedImage() {
@@ -1241,9 +1244,8 @@ function drawLoadedImage() {
   state.originalImageData = rasterContext.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height);
   state.workingImageData = cloneImageData(state.originalImageData);
   invalidateRenderCache();
-  window.requestAnimationFrame(() => {
-    fitCanvasToFrame();
-  });
+  updateCanvasFrameLayout();
+  fitCanvasToFrame();
 }
 
 function analyzeImage() {
@@ -1298,14 +1300,28 @@ function setZoom(nextZoom) {
     return;
   }
 
-  const anchorX = state.frameWidth / 2;
-  const anchorY = state.frameHeight / 2;
+  const anchorX = 0;
+  const anchorY = 0;
   const imageXAtAnchor = (anchorX - state.imageOffsetX) / previousZoom;
   const imageYAtAnchor = (anchorY - state.imageOffsetY) / previousZoom;
 
   state.zoom = nextClampedZoom;
-  state.imageOffsetX = anchorX - imageXAtAnchor * nextClampedZoom;
-  state.imageOffsetY = anchorY - imageYAtAnchor * nextClampedZoom;
+  if (nextClampedZoom < previousZoom) {
+    state.imageOffsetX = 0;
+    state.imageOffsetY = 0;
+  } else {
+    state.imageOffsetX = anchorX - imageXAtAnchor * nextClampedZoom;
+    state.imageOffsetY = anchorY - imageYAtAnchor * nextClampedZoom;
+  }
+
+  if (getRenderedImageWidth() <= state.frameWidth) {
+    state.imageOffsetX = 0;
+  }
+
+  if (getRenderedImageHeight() <= state.frameHeight) {
+    state.imageOffsetY = 0;
+  }
+
   constrainImageOffsets();
   applyZoom();
   requestPreviewRender();
@@ -1356,6 +1372,7 @@ function setFramePreset(preset) {
   updateFramePresetUi();
 
   if (!state.image) {
+    updateCanvasFrameLayout();
     return;
   }
 
@@ -1393,7 +1410,39 @@ function applyZoom() {
   previewCanvas.style.height = `${height}px`;
   previewStage.style.width = `${width}px`;
   previewStage.style.height = `${height}px`;
-  zoomValue.textContent = formatZoom(state.zoom);
+  zoomValue.textContent = formatZoom(state.zoom * state.fitZoom);
+}
+
+function updateCanvasFrameLayout() {
+  if (!canvasFrame) {
+    return;
+  }
+
+  if (!state.image || !previewPanel || !previewTopbar || !canvasActions) {
+    canvasFrame.style.width = "";
+    canvasFrame.style.height = "";
+    canvasFrame.style.flex = "";
+    canvasFrame.style.alignSelf = "";
+    return;
+  }
+
+  const panelWidth = Math.max(previewPanel.clientWidth - 24, 1);
+  const reservedHeight =
+    previewTopbar.offsetHeight +
+    hoverInfo.offsetHeight +
+    canvasActions.offsetHeight +
+    18;
+  const panelHeight = Math.max(previewPanel.clientHeight - reservedHeight, 1);
+  const baseWidth = Math.max(state.frameWidth || 1, 1);
+  const baseHeight = Math.max(state.frameHeight || 1, 1);
+  const displayScale = Math.min(panelWidth / baseWidth, panelHeight / baseHeight, 1);
+  const targetWidth = Math.max(Math.floor(baseWidth * displayScale), 1);
+  const targetHeight = Math.max(Math.floor(baseHeight * displayScale), 1);
+
+  canvasFrame.style.width = `${targetWidth}px`;
+  canvasFrame.style.height = `${targetHeight}px`;
+  canvasFrame.style.flex = "0 0 auto";
+  canvasFrame.style.alignSelf = "center";
 }
 
 function getFitZoom() {
@@ -1401,17 +1450,23 @@ function getFitZoom() {
     return DEFAULT_ZOOM;
   }
 
-  const frameWidth = Math.max(canvasFrame.clientWidth - 28, 1);
-  const frameHeight = Math.max(canvasFrame.clientHeight - 28, 1);
+  const frameWidth = Math.max(canvasFrame.clientWidth - 2, 1);
+  const frameHeight = Math.max(canvasFrame.clientHeight - 2, 1);
   const fitZoom = Math.min(frameWidth / previewCanvas.width, frameHeight / previewCanvas.height, 1);
 
-  return clampNumber(fitZoom, MIN_ZOOM, MAX_ZOOM);
+  return Math.max(fitZoom, 0.01);
 }
 
 function fitCanvasToFrame({ preserveManualZoom = false } = {}) {
+  updateCanvasFrameLayout();
   const nextFitZoom = getFitZoom();
   state.fitZoom = nextFitZoom;
+  if (!preserveManualZoom && state.image) {
+    state.zoom = DEFAULT_ZOOM;
+    centerImageInFrame();
+  }
   applyZoom();
+  requestPreviewRender();
 }
 
 function updateTextUi() {
@@ -2709,6 +2764,7 @@ function applyDatamosh() {
 
   const direction = datamoshDirectionInput.value;
   const amount = clampNumber(Number(datamoshAmountInput.value), 1);
+  const allowOverflow = Boolean(datamoshOverflowInput?.checked);
   const offset = getDirectionOffset(direction);
   const sourceTiles = sourceIndices
     .map((index) => state.mosaicTiles[index])
@@ -2738,6 +2794,9 @@ function applyDatamosh() {
       const targetIndex = getTileIndexByGridPosition(targetRow, targetColumn);
 
       if (targetIndex < 0) {
+        if (allowOverflow) {
+          continue;
+        }
         break;
       }
 
@@ -2770,7 +2829,7 @@ function applyDatamosh() {
   invalidateRenderCache();
   requestPreviewRender();
   paletteSummary.textContent =
-    `${formatCount(changedIndices.size)} tiles were copied ${amount} steps toward ${directionLabel(direction)}.`;
+    `${formatCount(changedIndices.size)} tiles were copied ${amount} steps toward ${directionLabel(direction)}${allowOverflow ? " with overflow allowed" : ""}.`;
 }
 
 function rasterizeTiles(tiles, width, height) {
@@ -3102,18 +3161,6 @@ function clearExplicitSelection(options = {}) {
   }
 }
 
-function refreshPreviewCanvas(options = {}) {
-  state.hoveredTileIndex = -1;
-  clearExplicitSelection({ skipRender: true });
-  state.dragSelection = null;
-  invalidateRenderCache();
-  requestPreviewRender();
-
-  if (options.summaryMessage) {
-    paletteSummary.textContent = options.summaryMessage;
-  }
-}
-
 function getSelectedTileIndicesArray() {
   return Array.from(state.selectedTileIndices);
 }
@@ -3236,7 +3283,7 @@ function getCanvasPointFromEvent(event) {
 }
 
 function getTileIndexFromEvent(event) {
-  const point = getCanvasPointFromEvent(event);
+  const point = framePointToImagePoint(getCanvasPointFromEvent(event));
   return getTileIndexFromPoint(point.x, point.y);
 }
 
