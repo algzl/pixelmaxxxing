@@ -23,7 +23,6 @@ const exportPngButton = document.getElementById("export-png-button");
 const exportJpgButton = document.getElementById("export-jpg-button");
 const datamoshDirectionInput = document.getElementById("datamosh-direction");
 const datamoshAmountInput = document.getElementById("datamosh-amount");
-const datamoshOverflowInput = document.getElementById("datamosh-overflow");
 const applyDatamoshButton = document.getElementById("apply-datamosh-button");
 const paletteList = document.getElementById("palette-list");
 const paletteSummary = document.getElementById("palette-summary");
@@ -2764,7 +2763,6 @@ function applyDatamosh() {
 
   const direction = datamoshDirectionInput.value;
   const amount = clampNumber(Number(datamoshAmountInput.value), 1);
-  const allowOverflow = Boolean(datamoshOverflowInput?.checked);
   const offset = getDirectionOffset(direction);
   const sourceTiles = sourceIndices
     .map((index) => state.mosaicTiles[index])
@@ -2794,9 +2792,6 @@ function applyDatamosh() {
       const targetIndex = getTileIndexByGridPosition(targetRow, targetColumn);
 
       if (targetIndex < 0) {
-        if (allowOverflow) {
-          continue;
-        }
         break;
       }
 
@@ -2829,7 +2824,7 @@ function applyDatamosh() {
   invalidateRenderCache();
   requestPreviewRender();
   paletteSummary.textContent =
-    `${formatCount(changedIndices.size)} tiles were copied ${amount} steps toward ${directionLabel(direction)}${allowOverflow ? " with overflow allowed" : ""}.`;
+    `${formatCount(changedIndices.size)} tiles were copied ${amount} steps toward ${directionLabel(direction)}.`;
 }
 
 function rasterizeTiles(tiles, width, height) {
